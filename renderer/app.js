@@ -586,7 +586,9 @@ async function renderHome() {
     row.querySelector('strong').textContent = f.name;
     row.querySelector('.home-item-sub').textContent = timeAgo(f.mtime) + (f.rel.includes('/') ? ' · ' + f.rel.split('/').slice(0, -1).join('/') : '');
     row.querySelector('.home-file-main').onclick = () => {
-      inputEl.value = 'اطّلع على الملف "' + f.rel + '" ولخّص لي أهم ما فيه.';
+      // يُرفق الملف نفسه لا مساره: النموذج في هذه المرحلة يرى المرفقات فقط
+      addAttachments([workspace.path + '/' + f.rel]);
+      if (!inputEl.value.trim()) inputEl.value = 'لخّص لي أهم ما في الملف المرفق.';
       autoGrow(); inputEl.focus();
     };
     row.querySelector('.home-open').onclick = async (e) => {
@@ -608,7 +610,12 @@ async function renderHome() {
 
 function runSkill(skill) {
   newChat();
-  sendText('نفّذ المهارة «' + skill.id + '» الآن.');
+  // sendText يلتقط قيمة التفعيل في أول سطر متزامن — فالضبط بعدها فورًا آمن
+  activationEl.value = 'skill|' + skill.id;
+  const run = sendText('نفّذ هذه المهارة الآن.');
+  activationEl.value = '';
+  activationEl.classList.remove('armed');
+  return run;
 }
 
 // ---------- الإرسال ----------
@@ -623,14 +630,21 @@ async function sendMessage() {
 async function sendText(text) {
   if (!text || runForCurrentView()) return;
 
-  // تفعيل يدوي لمهارة أو عميل — يوجَّه الطلب صراحة.
-  // في م٤ يصير هذا حقنًا حقيقيًا لنص المهارة كرسالة نظام لا مجرد صياغة للطلب.
+  // تفعيل يدوي لمهارة أو عميل: يُقرأ نص الملف ويُضمَّن في الرسالة — النموذج
+  // في هذه المرحلة لا يقرأ الملفات بنفسه، فطلبٌ باسم المهارة وحده مستحيل.
+  // م٤ يستبدل هذا التضمين بحقن رسالة نظام حقيقي قبل أول طلب.
   const act = activationEl.value;
   if (act) {
     const [kind, id] = act.split('|');
-    text = kind === 'skill'
-      ? 'استخدم المهارة «' + id + '» لتنفيذ الطلب التالي:\n\n' + text
-      : 'كلّف العميل الجانبي «' + id + '» بالطلب التالي وقدّم لي نتيجته:\n\n' + text;
+    try {
+      const body = await window.kunnash.libraryRead(kind, id);
+      text = (kind === 'skill'
+        ? 'اتبع هذه المهارة حرفيًا في تنفيذ الطلب:\n\n' + body
+        : 'اعمل بدور هذا العميل والتزم قواعده:\n\n' + body)
+        + '\n\n---\nالطلب:\n' + text;
+    } catch {
+      addError('تعذّرت قراءة «' + id + '» — أُرسل الطلب بدونها.');
+    }
   }
 
   const attachments = pendingFiles.map((f) => f.path);
