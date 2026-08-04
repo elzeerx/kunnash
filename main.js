@@ -4,10 +4,10 @@
 
 const { app, BrowserWindow, ipcMain, shell, dialog, Notification } = require('electron');
 const path = require('path');
-const fs = require('fs');
 
 const core = require('./lib/core');
 const ws = require('./lib/workspace');
+const { resolveInWorkspace, forgetRoot } = require('./lib/paths');
 const { listLibrary, readItem, saveItem, deleteItem, templateFor } = require('./lib/library');
 
 const APP_NAME = 'كُنّاش';
@@ -51,7 +51,6 @@ app.whenReady().then(() => {
 });
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
 
-// حارس مؤقت حتى م١: الحارس الموحّد resolveInWorkspace يحل محله في كل المواضع
 function requireRoot() { return ws.requireWorkspace(); }
 
 // ---------- IPC: مساحة العمل ----------
@@ -66,6 +65,7 @@ ipcMain.handle('workspace:choose', async () => {
     properties: ['openDirectory', 'createDirectory'],
   });
   if (r.canceled || !r.filePaths.length) return null;
+  forgetRoot();   // الجذر المحلول مخزَّن — تبديل المساحة يبطله
   const root = ws.setWorkspace(r.filePaths[0]);
   return { path: root, name: path.basename(root) };
 });
@@ -107,12 +107,16 @@ ipcMain.handle('sessions:delete', (_e, id) => core.deleteSession(id));
 
 // ---------- IPC: ملفات وروابط ----------
 ipcMain.handle('folder:open', () => shell.openPath(requireRoot()));
-ipcMain.handle('file:open', (_e, rel) => {
-  const root = requireRoot();
-  const abs = path.resolve(root, rel);
-  if (!abs.startsWith(root + path.sep)) return false; // لا فتح خارج مساحة العمل
-  if (!fs.existsSync(abs)) return 'not-found';
-  return shell.openPath(abs);
+// يرجع سبب المنع لا مجرد false: النقرة التي لا يحدث بعدها شيء تُقرأ عطلًا،
+// والحارس يملك رسالة تشرح — فلا نبتلعها
+ipcMain.handle('file:open', async (_e, rel) => {
+  try {
+    const { abs } = resolveInWorkspace(requireRoot(), rel, { mustExist: true });
+    const err = await shell.openPath(abs);
+    return err ? { ok: false, code: 'OPEN_FAILED', message: err } : { ok: true };
+  } catch (err) {
+    return { ok: false, code: err.code || 'ERROR', message: err.message };
+  }
 });
 ipcMain.handle('link:open', (_e, url) => {
   if (/^https?:\/\//.test(String(url))) return shell.openExternal(url);

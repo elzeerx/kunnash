@@ -143,8 +143,8 @@ function makeFileClickable(el, rawPath) {
   el.onclick = async (e) => {
     e.stopPropagation();
     const res = await window.kunnash.openFile(rawPath.trim());
-    if (res === 'not-found') {
-      el.title = 'الملف غير موجود بهذا المسار';
+    if (!res.ok) {
+      el.title = res.message;
       el.classList.add('file-missing');
     }
   };
@@ -589,7 +589,19 @@ async function renderHome() {
       inputEl.value = 'اطّلع على الملف "' + f.rel + '" ولخّص لي أهم ما فيه.';
       autoGrow(); inputEl.focus();
     };
-    row.querySelector('.home-open').onclick = (e) => { e.stopPropagation(); window.kunnash.openFile(f.rel); };
+    row.querySelector('.home-open').onclick = async (e) => {
+      e.stopPropagation();
+      const res = await window.kunnash.openFile(f.rel);
+      if (res.ok) return;
+      // الرسالة تحل محل السطر الفرعي مؤقتًا، وتبقى في التلميح — نقرةٌ بلا أثر
+      // تُقرأ عطلًا في التطبيق، والحارس يملك السبب فلا نبتلعه
+      const sub = row.querySelector('.home-item-sub');
+      const was = sub.textContent;
+      row.title = res.message;
+      sub.textContent = '⛔ ' + res.message;
+      sub.classList.add('sub-warn');
+      setTimeout(() => { sub.textContent = was; sub.classList.remove('sub-warn'); }, 8000);
+    };
     filesEl.appendChild(row);
   }
 }
@@ -860,7 +872,7 @@ async function saveLibItem() {
   libStatusEl.textContent = '';
   libStatusEl.classList.remove('fail');
   try {
-    if (!id) throw new Error('اكتب المعرّف أولًا (لاتيني صغير وشرطات، مثل: monthly-report)');
+    if (!id) throw new Error('اكتب المعرّف أولًا — هو اسم مجلد المهارة (مثل: weekly-report أو «تقرير-الأسبوع»)');
     let content = libContentEl.value;
     if (libCurrent.isNew) content = content.replace(/^name: .*$/m, 'name: ' + id);
     await window.kunnash.librarySave(libCurrent.type, id, content);

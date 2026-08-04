@@ -13,6 +13,7 @@
 ```bash
 npm install
 npm start
+npm test    # اختبارات حارس المسار والمكتبة
 ```
 
 يحتاج Node.js وmacOS. ثم افتح ⚙️ الإعدادات وأدخل عنوان الخدمة واسم النموذج والمفتاح.
@@ -41,11 +42,13 @@ npm start
 main.js          العملية الرئيسية — نقلٌ وواجهةُ نظام فقط
 preload.js       الجسر الوحيد بين الواجهة والنظام
 lib/workspace.js مساحة العمل وإعدادات المستخدم
+lib/paths.js     حارس المسار — الموضع الوحيد الذي يقرر ما هو داخل مساحة العمل
 lib/connection.js الاتصال بالنموذج — بث SSE لواجهة OpenAI-compatible
 lib/core.js      النواة: الجلسات والدردشة — لا تعرف Electron
 lib/library.js   المهارات والعملاء كملفات
 lib/attachments.js المرفقات → أجزاء رسالة
 renderer/        الواجهة، ومعها vendor/ لما تحتاجه من مكتبات
+test/            اختبارات node:test — بلا إطار ولا تبعية
 ```
 
 **بلا تبعيات تشغيل.** `npm install` يجلب Electron للتطوير فقط. مكتبة عرض الماركداون (marked 12.0.2، MIT) منسوخة في `renderer/vendor/` فتبقى الواجهة مكتفية بنفسها ولا تمدّ يدها إلى `node_modules`. لتحديثها: انسخ `marked.min.js` من إصدار أحدث وحدّث الرقم هنا.
