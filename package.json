@@ -9,11 +9,7 @@
   "scripts": {
     "start": "electron ."
   },
-  "dependencies": {
-    "marked": "^12.0.0",
-    "xlsx": "^0.18.5",
-    "zod": "^4.4.3"
-  },
+  "dependencies": {},
   "devDependencies": {
     "electron": "^43.2.0"
   }

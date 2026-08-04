@@ -26,7 +26,7 @@
       <div class="sidebar-foot">
         <button id="btn-library" class="btn-ghost" title="إدارة العملاء والمهارات">🤖 العملاء والمهارات</button>
         <button id="btn-folder" class="btn-ghost" title="فتح مجلد العمل">📁 <span id="workspace-name">مجلد العمل</span></button>
-        <button id="btn-settings" class="btn-ghost" title="مفاتيح النماذج">⚙️ الإعدادات</button>
+        <button id="btn-settings" class="btn-ghost" title="الاتصال بالنموذج">⚙️ الإعدادات</button>
       </div>
     </aside>
 
@@ -44,7 +44,7 @@
         <!-- لوحة البداية -->
         <div id="empty-state" class="empty-state">
           <h2>حيّاك الله</h2>
-          <div id="home-providers" class="chips-row"></div>
+          <div id="connection-chip" class="chips-row"></div>
 
           <div class="home-grid">
             <section class="home-card">
@@ -71,11 +71,7 @@
               <select id="activation-picker" title="تفعيل مهارة أو تكليف عميل">
                 <option value="">تفعيل تلقائي</option>
               </select>
-              <select id="model-picker" title="اختيار النموذج">
-                <option value="gpt|">GPT</option>
-                <option value="kimi|">KIMI</option>
-                <option value="glm|">GLM</option>
-              </select>
+              <button id="model-chip" class="model-chip" title="تغيير النموذج من الإعدادات">لم يُحدَّد نموذج</button>
             </div>
             <button id="btn-send" class="btn-send" title="إرسال">إرسال</button>
           </div>
@@ -89,13 +85,30 @@
   <div id="settings-modal" class="modal hidden">
     <div class="modal-card">
       <div class="modal-head">
-        <h3>⚙️ إعدادات النماذج</h3>
+        <h3>⚙️ الاتصال بالنموذج</h3>
         <button id="btn-close-settings" class="btn-x">✕</button>
       </div>
-      <p class="modal-note">المفاتيح تُحفظ محليًا على جهازك، ولا تُرسل إلا لمزوّد النموذج نفسه.</p>
-      <div id="providers-form"></div>
+      <p class="modal-note">أي خدمة تتكلم لغة OpenAI تعمل هنا — OpenRouter أو مزوّد مباشر أو نموذج على جهازك.
+      المفتاح يُحفظ محليًا، ولا يُرسل إلا للعنوان المكتوب أدناه.</p>
+
+      <div class="conn-form">
+        <label for="conn-label">الاسم الظاهر</label>
+        <input id="conn-label" type="text" placeholder="OpenRouter" />
+
+        <label for="conn-url">عنوان الخدمة (Base URL)</label>
+        <input id="conn-url" type="text" dir="ltr" placeholder="https://openrouter.ai/api/v1" />
+
+        <label for="conn-model">اسم النموذج</label>
+        <input id="conn-model" type="text" dir="ltr" placeholder="anthropic/claude-sonnet-4.5" />
+
+        <label for="conn-key">المفتاح</label>
+        <input id="conn-key" type="password" dir="ltr" placeholder="sk-..." />
+      </div>
+
       <div class="modal-actions">
         <button id="btn-save-settings" class="btn-primary">حفظ</button>
+        <button id="btn-test-conn" class="btn-ghost-dark">🔌 اختبار الاتصال</button>
+        <span id="conn-status" class="test-status"></span>
       </div>
     </div>
   </div>
@@ -157,7 +170,7 @@
     </div>
   </div>
 
-  <script src="../node_modules/marked/marked.min.js"></script>
+  <script src="vendor/marked.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

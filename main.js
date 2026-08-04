@@ -81,18 +81,19 @@ ipcMain.handle('library:save', (_e, { type, id, content }) => saveItem(requireRo
 ipcMain.handle('library:delete', (_e, { type, id }) => deleteItem(requireRoot(), type, id));
 ipcMain.handle('library:template', (_e, { type, id }) => templateFor(type, id));
 
-// ---------- IPC: إعدادات ----------
-ipcMain.handle('settings:get', () => core.loadProviderSettings());
-ipcMain.handle('settings:save', (_e, settings) => {
-  core.saveRawKeys(settings);
-  return true;
+// ---------- IPC: الاتصال بالنموذج ----------
+ipcMain.handle('connection:get', () => {
+  // المفتاح لا يعبر الجسر: الواجهة تعرف أنه محفوظ ولا تعرف قيمته
+  const { label, baseUrl, model, apiKey } = core.loadConnection();
+  return { label, baseUrl, model, hasKey: Boolean(apiKey) };
 });
-ipcMain.handle('settings:test', async (_e, provider) => {
-  const cfg = core.loadProviderSettings()[provider];
-  if (!cfg) return { ok: false, error: 'مزود غير معروف' };
-  if (!cfg.apiKey) return { ok: false, error: 'أدخل مفتاح API أولًا ثم احفظ' };
+ipcMain.handle('connection:save', (_e, patch) => core.saveConnection(patch));
+ipcMain.handle('connection:test', async () => {
+  const cfg = core.loadConnection();
+  if (!cfg.apiKey) return { ok: false, error: 'أدخل المفتاح أولًا ثم احفظ' };
+  if (!cfg.model) return { ok: false, error: 'اكتب اسم النموذج أولًا ثم احفظ' };
   try {
-    const reply = await core.testProvider(cfg);
+    const reply = await core.testConnection(cfg);
     return { ok: true, reply };
   } catch (err) {
     return { ok: false, error: String(err && err.message || err) };

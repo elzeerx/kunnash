@@ -5,14 +5,13 @@ const messagesEl = $('#messages');
 const emptyEl = $('#empty-state');
 const inputEl = $('#input');
 const sendBtn = $('#btn-send');
-const pickerEl = $('#model-picker');
+const modelChipEl = $('#model-chip');
 const sessionsListEl = $('#sessions-list');
 
 let currentSessionId = null;   // null = محادثة جديدة
 let viewToken = 0;             // يتغيّر مع كل تبديل شاشة — يحدد أي تشغيل معروض
 let workspace = null;          // { path, name } أو null قبل الاختيار
-
-const PROVIDER_LABELS = { gpt: 'GPT', kimi: 'KIMI', glm: 'GLM' };
+let connection = null;         // { label, model, ready }
 
 // ---------- أدوات عرض ----------
 function escapeHtml(s) {
@@ -53,6 +52,24 @@ function applyWorkspace(info) {
   $('#btn-library').disabled = !has;
   $('#btn-folder').disabled = !has;
   $('#workspace-name').textContent = has ? workspace.name : 'مجلد العمل';
+}
+
+// حالة الاتصال تظهر في موضعين: شريحة في لوحة البداية، ورقاقة النموذج في
+// صندوق الكتابة. كلاهما من مصدر واحد فلا يفترقان.
+function applyConnection(info) {
+  connection = info || null;
+  const ready = Boolean(connection && connection.ready);
+
+  const chips = $('#connection-chip');
+  chips.innerHTML = '';
+  const c = document.createElement('span');
+  c.className = 'chip ' + (ready ? 'chip-on' : 'chip-off');
+  c.textContent = (ready ? '● ' : '○ ') + (connection ? connection.label : 'بلا اتصال');
+  c.title = ready ? connection.model : 'أكمل الاتصال من الإعدادات ⚙️';
+  chips.appendChild(c);
+
+  modelChipEl.textContent = ready ? connection.model : 'أكمل الاتصال ⚙️';
+  modelChipEl.classList.toggle('unset', !ready);
 }
 
 async function chooseWorkspace() {
@@ -248,7 +265,7 @@ async function refreshSessions() {
     const title = document.createElement('span');
     title.className = 's-title';
     title.textContent = s.title;
-    title.title = `${PROVIDER_LABELS[s.provider] || s.provider} · ${s.count} رسالة`;
+    title.title = `${s.model || 'بلا نموذج'} · ${s.count} رسالة`;
     const del = document.createElement('button');
     del.className = 's-del';
     del.textContent = '✕';
@@ -285,7 +302,7 @@ async function openSession(id) {
   for (const m of s.messages) {
     if (m.role === 'user') addUserMsg(m.text, m.attachments);
     else {
-      const { bubble } = addAssistantShell(labelFor(m.provider, m.model));
+      const { bubble } = addAssistantShell(labelFor(m.model));
       bubble.innerHTML = renderMarkdown(m.text);
       linkifyBubble(bubble);
       addCopyControls(bubble.closest('.msg'), m.text);
@@ -301,8 +318,6 @@ async function openSession(id) {
     const last = s.messages[s.messages.length - 1];
     if (last && last.role === 'user') {
       addError('هذه المحادثة توقفت قبل اكتمال الرد.', {
-        provider: s.provider || pickerEl.value.split('|')[0],
-        model: s.model || '',
         text: last.text,
         attachments: [],
       });
@@ -313,9 +328,8 @@ async function openSession(id) {
   scrollDown(true);
 }
 
-function labelFor(provider, model) {
-  const label = PROVIDER_LABELS[provider] || provider;
-  return model ? `${label} · ${model}` : label;
+function labelFor(model) {
+  return model || (connection && connection.label) || '';
 }
 
 function newChat() {
@@ -545,19 +559,8 @@ async function renderHome() {
   try { data = await window.kunnash.dashboardData(); } catch { return; }
 
   applyWorkspace(data.workspace);
+  applyConnection(data.connection);
   if (!data.workspace) return;
-
-  // حالة النماذج
-  const chips = $('#home-providers');
-  chips.innerHTML = '';
-  const entries = Object.entries(PROVIDER_LABELS).map(([id, label]) => [id, label, data.providers[id]]);
-  for (const [, label, on] of entries) {
-    const c = document.createElement('span');
-    c.className = 'chip ' + (on ? 'chip-on' : 'chip-off');
-    c.textContent = (on ? '● ' : '○ ') + label;
-    c.title = on ? 'جاهز' : 'أدخل المفتاح من الإعدادات';
-    chips.appendChild(c);
-  }
 
   // المهارات كمهام سريعة
   const skillsEl = $('#home-skills');
@@ -618,13 +621,12 @@ async function sendText(text) {
       : 'كلّف العميل الجانبي «' + id + '» بالطلب التالي وقدّم لي نتيجته:\n\n' + text;
   }
 
-  const [provider, model] = pickerEl.value.split('|');
   const attachments = pendingFiles.map((f) => f.path);
   addUserMsg(text, pendingFiles.map((f) => f.name));
   pendingFiles = [];
   renderAttachList();
 
-  await dispatch({ provider, model, text, attachments });
+  await dispatch({ text, attachments });
 }
 
 // ---------- تشغيل عدة محادثات في وقت واحد ----------
@@ -649,7 +651,7 @@ function updateSendState() {
 
 // يربط تشغيلًا بالشاشة الحالية ويعرض ما تراكم فيه حتى الآن
 function attachRunDom(run) {
-  const shell = addAssistantShell(labelFor(run.payload.provider, run.payload.model));
+  const shell = addAssistantShell(labelFor(run.model));
   run.els = shell;
   if (run.text) shell.bubble.textContent = run.text;
   for (const label of run.tools) {
@@ -672,6 +674,7 @@ async function dispatch(payload) {
     sessionId: currentSessionId,
     viewToken,
     payload,
+    model: connection ? connection.model : '',
     text: '',
     tools: [],
     els: null,
@@ -691,10 +694,11 @@ function finishRun(run) {
 }
 
 // أحداث البث من العملية الرئيسية — كل حدث يحمل requestId فيصل لمحادثته
-window.kunnash.onChatEvent('chat:started', ({ requestId, sessionId }) => {
+window.kunnash.onChatEvent('chat:started', ({ requestId, sessionId, model }) => {
   const run = runs.get(requestId);
   if (!run) return;
   run.sessionId = sessionId;
+  if (model) run.model = model;
   // لو ما زلنا على نفس الشاشة التي أُرسل منها، تتبنّى هذه الشاشة الجلسة الجديدة
   if (run.viewToken === viewToken && !currentSessionId) currentSessionId = sessionId;
   refreshSessions();
@@ -747,61 +751,48 @@ window.kunnash.onChatEvent('chat:error', ({ requestId, message }) => {
   finishRun(run);
 });
 
-// ---------- الإعدادات ----------
+// ---------- الاتصال بالنموذج ----------
 const settingsModal = $('#settings-modal');
-const providersForm = $('#providers-form');
+const connStatusEl = $('#conn-status');
 
 async function openSettings() {
-  const settings = await window.kunnash.getSettings();
-  providersForm.innerHTML = '';
-
-  for (const [id, cfg] of Object.entries(settings)) {
-    const block = document.createElement('div');
-    block.className = 'provider-block';
-    block.dataset.provider = id;
-    block.innerHTML = `
-      <h4>${cfg.label}</h4>
-      <label>مفتاح API</label>
-      <input type="password" class="f-key" placeholder="sk-..." />
-      <label>اسم النموذج</label>
-      <input type="text" class="f-model" />
-      <label>عنوان الخدمة (Base URL)</label>
-      <input type="text" class="f-url" />
-      <div class="provider-test-row">
-        <button class="btn-test">🔌 اختبار الاتصال</button>
-        <span class="test-status"></span>
-      </div>
-    `;
-    block.querySelector('.f-key').value = cfg.apiKey || '';
-    block.querySelector('.f-model').value = cfg.model || '';
-    block.querySelector('.f-url').value = cfg.baseUrl || '';
-    block.querySelector('.btn-test').onclick = async () => {
-      const status = block.querySelector('.test-status');
-      status.className = 'test-status';
-      status.textContent = 'يجرّب الاتصال…';
-      await saveSettings(true); // نحفظ أولًا كي يُختبر ما هو مكتوب فعلًا
-      const res = await window.kunnash.testProvider(id);
-      if (res.ok) { status.classList.add('ok'); status.textContent = '✅ يعمل — رد النموذج: ' + res.reply; }
-      else { status.classList.add('fail'); status.textContent = '⛔ ' + res.error; }
-    };
-    providersForm.appendChild(block);
-  }
+  const c = await window.kunnash.getConnection();
+  $('#conn-label').value = c.label || '';
+  $('#conn-url').value = c.baseUrl || '';
+  $('#conn-model').value = c.model || '';
+  // المفتاح لا يعبر الجسر — الحقل فارغ، ونائبه يخبر أنه محفوظ
+  $('#conn-key').value = '';
+  $('#conn-key').placeholder = c.hasKey ? '•••••••• محفوظ — اترك الحقل فارغًا لإبقائه' : 'sk-...';
+  connStatusEl.className = 'test-status';
+  connStatusEl.textContent = '';
   settingsModal.classList.remove('hidden');
 }
 
+// المفتاح يُرسل فقط إن كتب المستخدم واحدًا جديدًا: الحقل الفارغ يعني «لا تغيّره»
+function connectionPatch() {
+  const key = $('#conn-key').value.replace(/\s+/g, '');
+  return {
+    label: $('#conn-label').value.trim(),
+    baseUrl: $('#conn-url').value.replace(/\s+/g, ''),
+    model: $('#conn-model').value.trim(),
+    ...(key ? { apiKey: key } : {}),
+  };
+}
+
 async function saveSettings(keepOpen) {
-  const out = {};
-  for (const block of providersForm.querySelectorAll('.provider-block')) {
-    if (!block.dataset.provider) continue;
-    // المفاتيح تُنظف من أي مسافات وأسطر داخلية — النسخ من الطرفية يلتقط فواصل الأسطر
-    out[block.dataset.provider] = {
-      apiKey: block.querySelector('.f-key').value.replace(/\s+/g, ''),
-      model: block.querySelector('.f-model').value.trim(),
-      baseUrl: block.querySelector('.f-url').value.replace(/\s+/g, ''),
-    };
-  }
-  await window.kunnash.saveSettings(out);
+  await window.kunnash.saveConnection(connectionPatch());
+  const c = await window.kunnash.getConnection();
+  applyConnection({ label: c.label, model: c.model, ready: Boolean(c.hasKey && c.model) });
   if (keepOpen !== true) settingsModal.classList.add('hidden');
+}
+
+async function testConnection() {
+  connStatusEl.className = 'test-status';
+  connStatusEl.textContent = 'يجرّب الاتصال…';
+  await saveSettings(true);   // نختبر ما هو مكتوب فعلًا لا ما كان محفوظًا
+  const res = await window.kunnash.testConnection();
+  if (res.ok) { connStatusEl.classList.add('ok'); connStatusEl.textContent = '✅ يعمل — رد النموذج: ' + res.reply; }
+  else { connStatusEl.classList.add('fail'); connStatusEl.textContent = '⛔ ' + res.error; }
 }
 
 // ---------- مكتبة العملاء والمهارات ----------
@@ -925,6 +916,8 @@ $('#lib-delete').onclick = deleteLibItem;
 $('#btn-settings').onclick = openSettings;
 $('#btn-close-settings').onclick = () => settingsModal.classList.add('hidden');
 $('#btn-save-settings').onclick = saveSettings;
+$('#btn-test-conn').onclick = testConnection;
+modelChipEl.onclick = openSettings;
 settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal) settingsModal.classList.add('hidden'); });
 
 $('#btn-choose-workspace').onclick = chooseWorkspace;

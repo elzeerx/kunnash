@@ -5,10 +5,10 @@ contextBridge.exposeInMainWorld('kunnash', {
   getWorkspace: () => ipcRenderer.invoke('workspace:get'),
   chooseWorkspace: () => ipcRenderer.invoke('workspace:choose'),
 
-  // إعدادات المزودين
-  getSettings: () => ipcRenderer.invoke('settings:get'),
-  saveSettings: (s) => ipcRenderer.invoke('settings:save', s),
-  testProvider: (provider) => ipcRenderer.invoke('settings:test', provider),
+  // الاتصال بالنموذج
+  getConnection: () => ipcRenderer.invoke('connection:get'),
+  saveConnection: (patch) => ipcRenderer.invoke('connection:save', patch),
+  testConnection: () => ipcRenderer.invoke('connection:test'),
 
   // مكتبة العملاء والمهارات
   libraryList: () => ipcRenderer.invoke('library:list'),

@@ -165,6 +165,39 @@ html, body {
 .empty-state p { font-size: 14px; color: var(--muted); line-height: 1.9; margin-bottom: 26px; }
 
 .ws-lede { max-width: 44ch; margin-inline: auto; }
+
+/* رقاقة النموذج في صندوق الكتابة */
+.model-chip {
+  background: var(--accent-wash);
+  border: 1px solid var(--accent-line);
+  color: var(--accent-strong);
+  border-radius: 8px;
+  padding: 5px 11px;
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.model-chip:hover { border-color: var(--accent-soft); }
+.model-chip.unset { background: var(--surface); border-color: var(--line); color: var(--muted); }
+
+/* نموذج الاتصال */
+.conn-form { display: flex; flex-direction: column; gap: 4px; }
+.conn-form label { font-size: 12px; color: var(--muted); margin-top: 8px; }
+.conn-form input {
+  font-family: inherit;
+  font-size: 13px;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+}
+.conn-form input:focus { outline: none; border-color: var(--accent-soft); }
+
 .btn-lg { padding: 13px 26px; font-size: 15px; }
 
 .chips-row { display: flex; justify-content: center; gap: 6px; margin-bottom: 16px; }
@@ -475,27 +508,6 @@ html, body {
 .modal-head h3 { font-size: 17px; }
 .btn-x { background: none; border: none; font-size: 15px; cursor: pointer; color: var(--muted); }
 .modal-note { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
-.provider-block {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 14px;
-  margin-bottom: 12px;
-}
-.provider-block h4 { font-size: 14px; margin-bottom: 10px; }
-.provider-block label { display: block; font-size: 12px; color: var(--muted); margin: 8px 0 3px; }
-.provider-block input {
-  width: 100%;
-  font-family: inherit;
-  font-size: 13px;
-  padding: 8px 10px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--bg);
-  direction: ltr;
-  text-align: left;
-}
-.provider-block input:focus { outline: none; border-color: var(--accent-soft); }
 .modal-actions { text-align: left; margin-top: 6px; }
 
 /* ---------- مربع طلب الإذن ---------- */
@@ -542,7 +554,6 @@ html, body {
 }
 .btn-ghost-dark:hover { border-color: var(--accent-soft); color: var(--accent-strong); }
 
-.provider-test-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
 .btn-test {
   background: var(--bg);
   border: 1px solid var(--line);
