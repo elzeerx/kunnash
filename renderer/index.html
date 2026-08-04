@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;" />
+  <title>كُنّاش</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+
+    <!-- الشريط الجانبي -->
+    <aside class="sidebar">
+      <div class="sidebar-head">
+        <div class="app-title">
+          <h1>كُنّاش</h1>
+          <p>دفتر العالِم الذي يجمع فيه ما ينفعه</p>
+        </div>
+      </div>
+
+      <button id="btn-new" class="btn-primary">＋ محادثة جديدة</button>
+
+      <div class="sessions-label">المحادثات</div>
+      <nav id="sessions-list" class="sessions-list"></nav>
+
+      <div class="sidebar-foot">
+        <button id="btn-library" class="btn-ghost" title="إدارة العملاء والمهارات">🤖 العملاء والمهارات</button>
+        <button id="btn-folder" class="btn-ghost" title="فتح مجلد العمل">📁 <span id="workspace-name">مجلد العمل</span></button>
+        <button id="btn-settings" class="btn-ghost" title="مفاتيح النماذج">⚙️ الإعدادات</button>
+      </div>
+    </aside>
+
+    <!-- منطقة المحادثة -->
+    <main class="main">
+      <div id="chat" class="chat">
+
+        <!-- بلا مساحة عمل: هذه الشاشة وحدها تظهر -->
+        <div id="no-workspace" class="empty-state hidden">
+          <h2>حيّاك الله</h2>
+          <p class="ws-lede">كُنّاش يشتغل على مجلد تختاره أنت — ملفاتك تبقى مكانها، وهو يقرأ منها ويكتب فيها.</p>
+          <button id="btn-choose-workspace" class="btn-primary btn-lg">اختر مجلد العمل</button>
+        </div>
+
+        <!-- لوحة البداية -->
+        <div id="empty-state" class="empty-state">
+          <h2>حيّاك الله</h2>
+          <div id="home-providers" class="chips-row"></div>
+
+          <div class="home-grid">
+            <section class="home-card">
+              <h3>⚡ مهام سريعة <span class="home-card-hint">تنفّذ مهاراتك بنقرة</span></h3>
+              <div id="home-skills" class="home-list"></div>
+            </section>
+            <section class="home-card">
+              <h3>📁 آخر الملفات المحدثة <span class="home-card-hint">انقر ملفًا لتحليله</span></h3>
+              <div id="home-files" class="home-list"></div>
+            </section>
+          </div>
+        </div>
+        <div id="messages" class="messages"></div>
+      </div>
+
+      <!-- صندوق الكتابة -->
+      <div class="composer-wrap">
+        <div class="composer">
+          <div id="attach-list" class="attach-list"></div>
+          <textarea id="input" rows="1" placeholder="اكتب رسالتك… (Enter للإرسال، Shift+Enter لسطر جديد، أو اسحب ملفات هنا)"></textarea>
+          <div class="composer-controls">
+            <div class="composer-selects">
+              <button id="btn-attach" class="btn-attach" title="إرفاق ملفات">＋</button>
+              <select id="activation-picker" title="تفعيل مهارة أو تكليف عميل">
+                <option value="">تفعيل تلقائي</option>
+              </select>
+              <select id="model-picker" title="اختيار النموذج">
+                <option value="gpt|">GPT</option>
+                <option value="kimi|">KIMI</option>
+                <option value="glm|">GLM</option>
+              </select>
+            </div>
+            <button id="btn-send" class="btn-send" title="إرسال">إرسال</button>
+          </div>
+        </div>
+        <div class="composer-hint">ما تكتبه هنا يغادر جهازك إلى مزوّد النموذج الذي اخترته · ملفاتك تبقى مكانها</div>
+      </div>
+    </main>
+  </div>
+
+  <!-- نافذة الإعدادات -->
+  <div id="settings-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h3>⚙️ إعدادات النماذج</h3>
+        <button id="btn-close-settings" class="btn-x">✕</button>
+      </div>
+      <p class="modal-note">المفاتيح تُحفظ محليًا على جهازك، ولا تُرسل إلا لمزوّد النموذج نفسه.</p>
+      <div id="providers-form"></div>
+      <div class="modal-actions">
+        <button id="btn-save-settings" class="btn-primary">حفظ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- نافذة العملاء والمهارات -->
+  <div id="library-modal" class="modal hidden">
+    <div class="modal-card modal-wide">
+      <div class="modal-head">
+        <h3>🤖 العملاء والمهارات</h3>
+        <button id="btn-close-library" class="btn-x">✕</button>
+      </div>
+      <p class="modal-note">تُحفظ كملفات في <span dir="ltr">.kunnash/</span> داخل مجلد عملك — تنقلها وتشاركها كما تنقل أي ملف.</p>
+
+      <div class="lib-layout">
+        <div class="lib-side">
+          <div class="lib-group-title">العملاء الجانبيون</div>
+          <div id="lib-agents" class="lib-list"></div>
+          <button class="lib-new" data-type="agent">＋ عميل جديد</button>
+
+          <div class="lib-group-title">المهارات</div>
+          <div id="lib-skills" class="lib-list"></div>
+          <button class="lib-new" data-type="skill">＋ مهارة جديدة</button>
+        </div>
+
+        <div class="lib-editor">
+          <div id="lib-editor-empty" class="lib-editor-empty">اختر عنصرًا من القائمة أو أنشئ جديدًا</div>
+          <div id="lib-editor-form" class="hidden">
+            <div class="lib-id-row">
+              <label>المعرّف:</label>
+              <input id="lib-id" type="text" dir="ltr" placeholder="monthly-report" />
+              <span id="lib-type-badge" class="lib-badge"></span>
+            </div>
+            <textarea id="lib-content" dir="auto" spellcheck="false"></textarea>
+            <div class="lib-actions">
+              <button id="lib-save" class="btn-primary">حفظ</button>
+              <button id="lib-delete" class="btn-danger">حذف</button>
+              <span id="lib-status" class="lib-status"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- مربع طلب الإذن -->
+  <div id="permission-modal" class="modal hidden">
+    <div class="modal-card perm-card">
+      <div class="perm-head">
+        <span class="perm-icon">🔐</span>
+        <h3>يطلب كُنّاش إذنك</h3>
+      </div>
+      <p id="perm-summary" class="perm-summary"></p>
+      <pre id="perm-details" class="perm-details"></pre>
+      <div class="perm-actions">
+        <button id="perm-allow" class="btn-primary">السماح مرة واحدة</button>
+        <button id="perm-always" class="btn-ghost-dark">السماح دائمًا لهذه الأداة</button>
+        <button id="perm-deny" class="btn-danger">رفض</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../node_modules/marked/marked.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

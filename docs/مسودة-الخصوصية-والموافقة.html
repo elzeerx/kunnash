@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>مسودة: كيف تُعامَل بياناتك — النسخة الثالثة</title>
+<style>
+  :root{
+    --ink:#1B2430; --ink-soft:#55606E; --line:#E2E6EC; --bg:#F7F8FA; --card:#FFFFFF;
+    --accent:#1F6F6B; --accent-soft:#E8F2F1; --ok:#2C7A4B; --ok-soft:#E7F4EC;
+    --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+    --ar:"SF Arabic","Geeza Pro","Segoe UI",system-ui,sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --ink:#E8ECF1; --ink-soft:#9AA6B4; --line:#2C3542; --bg:#141A21; --card:#1B222B;
+           --accent:#5FBAB3; --accent-soft:#17302E; --ok:#6FC48D; --ok-soft:#17301F; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--ar);line-height:1.9;
+       font-size:16px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:860px;margin:0 auto;padding:48px 22px 90px}
+  h1{font-size:26px;margin:0 0 6px;letter-spacing:-.2px}
+  .sub{color:var(--ink-soft);margin:0 0 38px;font-size:15px}
+  h2{font-size:19px;margin:54px 0 4px;padding-top:26px;border-top:1px solid var(--line)}
+  h2 .n{color:var(--accent);font-family:var(--mono);font-size:14px;margin-left:8px}
+  .hint{color:var(--ink-soft);font-size:14px;margin:0 0 22px}
+  h3{font-size:16px;margin:26px 0 8px}
+  p{margin:0 0 14px}
+  ul{margin:0 0 16px;padding-inline-start:20px}
+  li{margin-bottom:9px}
+  .note{border-inline-start:3px solid var(--accent);padding:2px 16px;margin:20px 0;
+        color:var(--ink-soft);font-size:15px}
+  .new{border-inline-start:3px solid var(--ok);background:var(--ok-soft);padding:12px 16px;
+       border-radius:0 10px 10px 0;margin:20px 0;font-size:14.5px}
+  .copy{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:22px 26px}
+  .copy p:last-child,.copy ul:last-child{margin-bottom:0}
+
+  .screen{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;
+          margin:22px 0;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+  .bar{display:flex;gap:7px;padding:13px 16px;border-bottom:1px solid var(--line);background:var(--bg)}
+  .dot{width:11px;height:11px;border-radius:50%;background:var(--line)}
+  .body{padding:38px 40px}
+  .body h4{font-size:20px;margin:0 0 6px}
+  .body .lede{color:var(--ink-soft);margin:0 0 28px;font-size:15px}
+  .row{display:flex;gap:14px;align-items:flex-start;margin-bottom:20px}
+  .ic{flex:0 0 34px;height:34px;border-radius:9px;background:var(--accent-soft);color:var(--accent);
+      display:grid;place-items:center;font-size:16px}
+  .row b{display:block;font-size:15px;margin-bottom:2px}
+  .row span{color:var(--ink-soft);font-size:14.5px}
+  .alt{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:14px 16px;
+       font-size:14.5px;color:var(--ink-soft);margin:26px 0 24px}
+  .alt a{color:var(--accent)}
+  .cta{display:flex;align-items:center;gap:18px;flex-wrap:wrap;padding-top:20px;border-top:1px solid var(--line)}
+  .btn{background:var(--accent);color:#fff;border:0;border-radius:9px;padding:11px 24px;
+       font-family:var(--ar);font-size:15px;font-weight:600}
+  .link{color:var(--ink-soft);font-size:14px;text-decoration:underline;text-underline-offset:3px}
+
+  .ask{max-width:470px;margin:22px auto;background:var(--card);border:1px solid var(--line);
+       border-radius:14px;padding:24px 26px;box-shadow:0 6px 24px rgba(0,0,0,.08)}
+  .ask h5{margin:0 0 6px;font-size:16px}
+  .ask .what{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 13px;
+             font-family:var(--mono);font-size:13px;color:var(--ink-soft);margin:12px 0 18px;
+             overflow-x:auto;white-space:nowrap}
+  .ask .btns{display:flex;gap:9px;flex-wrap:wrap}
+  .ask .btns button{border-radius:8px;padding:9px 16px;font-family:var(--ar);font-size:14px;
+                    border:1px solid var(--line);background:transparent;color:var(--ink)}
+  .ask .btns button.pri{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}
+
+  /* مفتاح الإعداد */
+  .toggle{display:flex;gap:14px;align-items:flex-start;background:var(--card);border:1px solid var(--line);
+          border-radius:12px;padding:18px 20px;margin:18px 0}
+  .sw{flex:0 0 44px;height:26px;border-radius:20px;background:var(--accent);position:relative;margin-top:3px}
+  .sw::after{content:"";position:absolute;width:20px;height:20px;border-radius:50%;background:#fff;
+             top:3px;right:3px}
+  .toggle b{display:block;font-size:15px;margin-bottom:3px}
+  .toggle span{color:var(--ink-soft);font-size:14.5px}
+
+  table{width:100%;border-collapse:collapse;margin:16px 0;font-size:15px}
+  th,td{text-align:right;padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--ink-soft);font-weight:600;font-size:14px}
+  code{font-family:var(--mono);font-size:13px;background:var(--bg);padding:1px 6px;border-radius:5px}
+  .quote{font-family:var(--mono);font-size:13.5px;background:var(--bg);border:1px solid var(--line);
+         border-radius:8px;padding:12px 14px;direction:ltr;text-align:left;margin:10px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>مسودة: كيف تُعامَل بياناتك</h1>
+  <p class="sub">النسخة الثالثة — بعد التحقق الفعلي من سياسات OpenRouter وAnthropic وOpenAI · ٣ أغسطس ٢٠٢٦</p>
+
+  <div class="new">
+    <b>ما تغيّر عن النسخة الثانية:</b> صياغة دقيقة تفرّق بين <b>التدريب</b> و<b>الاحتفاظ</b>
+    (كانت ستصير ادعاءً غير صحيح) · مفتاح ظاهر لتجنّب المزوّدين الذين يتدرّبون، بلا فلترة صامتة ·
+    روابط سياسات المزوّدين تُجلب آليًا لا يدويًا.
+  </div>
+
+  <!-- ═══════════ ١ ═══════════ -->
+  <h2><span class="n">١</span> شاشة الترحيب</h2>
+  <p class="hint">تظهر مرة واحدة قبل ربط أي شيء. نبرتها: صديق يشرح، لا عقد يُوقَّع.</p>
+
+  <div class="screen">
+    <div class="bar"><i class="dot"></i><i class="dot"></i><i class="dot"></i></div>
+    <div class="body">
+      <h4>قبل ما نبدأ — كيف تُعامَل بياناتك</h4>
+      <p class="lede">باختصار، وبلا لفّ.</p>
+
+      <div class="row">
+        <div class="ic">📁</div>
+        <div><b>ملفاتك تبقى عندك</b>
+        <span>ما نرفعها ولا ننسخها ولا نفهرسها. التطبيق يشتغل في مجلدك مكانه.</span></div>
+      </div>
+
+      <div class="row">
+        <div class="ic">↗</div>
+        <div><b>ما تطلبه هو وحده اللي يطلع</b>
+        <span>لتنفيذ مهمة، يُرسَل طلبك ومقتطفات الملفات التي تحتاجها المهمة إلى النموذج
+        الذي اخترته. ولا شيء يطلع قبل ما تطلب.</span></div>
+      </div>
+
+      <div class="row">
+        <div class="ic">✋</div>
+        <div><b>القرار يرجع لك في كل خطوة</b>
+        <span>قبل ما يفتح التطبيق ملفًا أو يكتب شيئًا، يسألك. تسمح أو ترفض، مهمة مهمة،
+        وتوقف أي شي في نصّه.</span></div>
+      </div>
+
+      <div class="row">
+        <div class="ic">🔑</div>
+        <div><b>ما عندنا حساب ولا خادم</b>
+        <span>مفتاحك محفوظ مشفّرًا على جهازك. ما نجمع إحصاءات ولا نتتبّع استخدامك.</span></div>
+      </div>
+
+      <div class="alt">
+        شغلك على بيانات ما تحب تطلع من جهازك؟ شغّل نموذجًا محليًا — عندها ما يغادر شي إطلاقًا.
+        <a href="#">كيف؟</a>
+      </div>
+
+      <div class="cta">
+        <button class="btn">تمام، نبدأ</button>
+        <a class="link" href="#">تفاصيل أكثر</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ ٢ ═══════════ -->
+  <h2><span class="n">٢</span> الإذن عند كل خطوة</h2>
+  <p class="hint">
+    الطمأنة الحقيقية: لا موافقة تُعطى مرة وتُنسى، بل سؤال يظهر كل ما احتاج التطبيق أن يلمس شيئًا.
+    مبني ويعمل عندك اليوم.
+  </p>
+
+  <div class="ask">
+    <h5>يبي يقرأ ملفًا — تسمح؟</h5>
+    <div class="what">📖 قراءة · إيرادات-يوليو-2026.xlsx</div>
+    <div class="btns">
+      <button class="pri">اسمح</button>
+      <button>اسمح دائمًا لهذا النوع</button>
+      <button>لا</button>
+    </div>
+  </div>
+
+  <p class="hint" style="text-align:center">
+    ومثلها قبل كتابة أي ملف أو تنفيذ أي أمر. «لا» توقف المهمة فورًا بلا عتاب.
+  </p>
+
+  <!-- ═══════════ ٣ ═══════════ -->
+  <h2><span class="n">٣</span> مفتاح الخصوصية في الإعدادات <span style="font-size:13px;color:var(--ok)">— جديد</span></h2>
+  <p class="hint">
+    مفعّل افتراضيًا، وظاهر لا مخفي. <b>ولا يفلتر بصمت أبدًا.</b>
+  </p>
+
+  <div class="toggle">
+    <div class="sw"></div>
+    <div>
+      <b>تجنَّب المزوّدين الذين قد يتدرّبون على بياناتك</b>
+      <span>يُرسَل طلبك فقط لمزوّدين تمنع سياساتهم التدريب على محتواك. أغلب النماذج القوية
+      داخلة في هذا أصلًا.</span>
+    </div>
+  </div>
+
+  <div class="ask" style="max-width:500px">
+    <h5>هذا النموذج ما له مزوّد مطابق</h5>
+    <p style="font-size:14.5px;color:var(--ink-soft);margin:6px 0 16px">
+      «قمر ٤» ما عليه إلا مزوّدين تسمح سياساتهم بالتدريب. تختار؟
+    </p>
+    <div class="btns">
+      <button class="pri">بدّل النموذج</button>
+      <button>اسمح لهذي المهمة فقط</button>
+      <button>الغِ</button>
+    </div>
+  </div>
+
+  <p class="hint" style="text-align:center">
+    ما ينزل التطبيق لنموذج أضعف من نفسه، ولا يمنع بلا ما يقول ليش.
+  </p>
+
+  <!-- ═══════════ ٤ ═══════════ -->
+  <h2><span class="n">٤</span> صفحة «تفاصيل أكثر»</h2>
+
+  <div class="copy">
+    <h3>الخلاصة</h3>
+    <p>ملفاتك ومفتاحك ومحادثاتك كلها على جهازك. ما عندنا خادم تمرّ به، ولا حساب تسجّل فيه،
+    ولا نعرف عنك شيئًا. الاستثناء الوحيد: لما تطلب تنفيذ مهمة، يطلع من جهازك ما تحتاجه المهمة
+    ليصل للنموذج الذي اخترته — وما يصير هذا إلا بطلبك وبإذنك في كل خطوة.</p>
+
+    <h3>اللي يبقى عندك</h3>
+    <ul>
+      <li><b>ملفاتك ومجلداتك</b> — ما تُرفع ولا تُنسخ، ولا يُقرأ منها شي قبل ما تسمح.</li>
+      <li><b>مفتاحك</b> — مشفّرًا في سلسلة مفاتيح النظام، لا في ملف نصي مكشوف.</li>
+      <li><b>محادثاتك وسجلّك</b> — ملفات عندك، تحذفها متى ما تبي.</li>
+      <li><b>مهامك اللي تسويها</b> — ملفات نصية في مجلدك، تملكها وتنقلها وتشاركها مع فريقك.</li>
+    </ul>
+
+    <h3>اللي يطلع، ووين يروح</h3>
+    <p>عند تنفيذ مهمة يُرسَل: طلبك، ومقتطفات الملفات اللي وافقت على قراءتها، ونتائج الخطوات.
+    تمرّ عبر الموجّه اللي تربطه ثم للنموذج اللي اخترته — جهتان مستقلتان عنّا، ولكلٍّ سياساته.</p>
+
+    <h3>التدريب شي، والاحتفاظ شي ثانٍ</h3>
+    <p><b>التدريب:</b> التطبيق يمنع افتراضيًا وصول طلبك لأي مزوّد تسمح سياساته بالتدريب على
+    محتواك. وأغلب النماذج القوية داخلة أصلًا في «لا يتدرّبون» — Anthropic تنص في شروطها
+    التجارية على أنها لا تدرّب نماذجها على محتوى العملاء، وOpenAI لا تستخدم بيانات واجهتها
+    البرمجية للتدريب إلا بموافقتك الصريحة.</p>
+    <p><b>الاحتفاظ:</b> شي مختلف. «ما يتدرّبون» <b>لا تعني</b> «ما يحتفظون». المزوّدون
+    والموجّه قد يحتفظون بالطلبات مدةً لأغراض تشغيلية — مراقبة إساءة الاستخدام، والفوترة،
+    والالتزامات النظامية. OpenAI مثلًا تحتفظ بسجلات مراقبة الإساءة حتى ثلاثين يومًا افتراضيًا.</p>
+    <p>وضبط تجنّب التدريب يخصّ <b>المزوّدين</b>، ولا يغيّر سياسة الموجّه نفسه فيما يفعله بطلباتك.
+    السياسات كلها بروابطها في الأسفل — اقرأها قبل ما ترسل شي حساس.</p>
+
+    <h3>روابط سياسات مَن تمرّ بهم بياناتك</h3>
+    <p>يعرضها التطبيق محدَّثة تلقائيًا لكل مزوّد تستخدمه — لا قائمة ثابتة تتقادم — مع رابط
+    سياسة الموجّه نفسه.</p>
+
+    <h3>أشياء ما نسويها</h3>
+    <ul>
+      <li>ما نطلب حسابًا ولا بريدًا ولا تسجيل دخول عندنا.</li>
+      <li>ما نجمع إحصاءات استخدام ولا تقارير أعطال ولا أي تتبّع.</li>
+      <li>ما عندنا خادم تمرّ به بياناتك — التطبيق يخاطب المزوّد من جهازك مباشرة.</li>
+      <li>ما نشوف مفتاحك ولا ملفاتك ولا محادثاتك، وما نقدر أصلًا.</li>
+    </ul>
+
+    <h3>وأشياء بيدك أنت</h3>
+    <ul>
+      <li><b>تسمح أو ترفض كل خطوة</b> — وتوقف أي مهمة في نصّها.</li>
+      <li><b>تتجنّب المزوّدين اللي يتدرّبون</b> — مفعّل افتراضيًا، وتشوف أثره بوضوح.</li>
+      <li><b>حصر المجلد</b> — التطبيق ما يقرأ شي خارج المجلد اللي اخترته.</li>
+      <li><b>نموذج محلي</b> — ما يغادر جهازك شي إطلاقًا، مقابل جودة أقل في المهام المركّبة.</li>
+      <li><b>تمسح كل شي</b> — سجلّك ومفتاحك ملفات عندك، تمحوها بنفسك بلا إذن منّا.</li>
+    </ul>
+
+    <h3>كلمة صادقة</h3>
+    <p>الأداة مجانية ومفتوحة، وفيها أخطاء أكيد — كأي شي يسويه بشر. ما أجبر أحدًا على استخدامها،
+    وما أطلب منك توافق على شي ما ترتاح له. إن لقيت خللًا خبّرني أو صلّحه بنفسك، فالشيفرة كلها
+    مفتوحة قدّامك.</p>
+    <p>وإن كان شغلك على بيانات حساسة — عملاء أو مرضى أو ملفات جهة تشتغل عندها — شوف سياساتهم
+    أول، والنموذج المحلي خيار مريح لك في هذي الحالة.</p>
+  </div>
+
+  <!-- ═══════════ ٥ ═══════════ -->
+  <h2><span class="n">٥</span> نصّ «عن التطبيق»</h2>
+
+  <div class="copy">
+    <p>بنيت هذي الأداة عشان أنظّم شغلي اليومي: مكان واحد يجمع ملفاتي ومهامي المتكرّرة، وأربط فيه
+    النموذج اللي أبيه وقت ما أبيه — بلا حسابات متفرّقة، ولا ملفات مبعثرة، ولا أتعلّم أداة جديدة
+    كل ما طلع نموذج أفضل.</p>
+    <p>نفعتني، فحبيت ينتفع فيها غيري. أقدّمها مجانًا صدقةً — خذها واستعملها وعدّلها كيف ما تبي.</p>
+    <p>أصلّح اللي أقدر عليه وقت ما أقدر، وما ألتزم بدعم أو تحديثات. واللي يبي يمضي فيها أبعد —
+    الرخصة تتيح له ذلك بلا استئذان.</p>
+  </div>
+
+  <!-- ═══════════ ٦ ═══════════ -->
+  <h2><span class="n">٦</span> ما تحقّقتُ منه فعلًا</h2>
+  <p class="hint">حتى تعرف أي جملة في الصفحة مسنودة، وأيها ما زال يحتاج تأكيدًا.</p>
+
+  <table>
+    <tr><th style="width:30%">البند</th><th>النتيجة</th></tr>
+    <tr>
+      <td>Anthropic تتدرّب على محتوى العملاء؟</td>
+      <td><b>لا</b> — نصّ الشروط التجارية:
+        <div class="quote">"Anthropic may not train models on Customer Content from Services."</div>
+      </td>
+    </tr>
+    <tr>
+      <td>OpenAI تتدرّب على بيانات الواجهة البرمجية؟</td>
+      <td><b>لا افتراضيًا</b> — إلا بموافقة صريحة منك. لكنها تحتفظ بسجلات مراقبة الإساءة
+      حتى ٣٠ يومًا افتراضيًا.</td>
+    </tr>
+    <tr>
+      <td>هل يمنعك ضبط التجنّب من أوبس؟</td>
+      <td><b>غالبًا لا</b> — لأن أوبس أصلًا ضمن «لا يتدرّبون». ومع ذلك بنينا شاشة
+      «ما له مزوّد مطابق» حتى لا يُمنع شي بصمت في أي حالة.</td>
+    </tr>
+    <tr>
+      <td>ضبط التجنّب لكل طلب</td>
+      <td><b>متاح</b> — <code>provider.data_collection: "deny"</code> في جسم الطلب.</td>
+    </tr>
+    <tr>
+      <td>روابط سياسات المزوّدين</td>
+      <td><b>متاحة آليًا</b> من <code>/api/v1/providers</code> — نعرضها محدَّثة تلقائيًا.</td>
+    </tr>
+    <tr>
+      <td>علَم «يتدرّب/لا يتدرّب» لكل مزوّد</td>
+      <td><b>غير متاح في الواجهة البرمجية</b> — فحصت نقاط النماذج والمزوّدين فما وجدته؛
+      يظهر في واجهتهم المرئية فقط. نتأكد تجريبيًا بأول مفتاح.</td>
+    </tr>
+    <tr>
+      <td>حصر المجلد</td>
+      <td><b>مبني</b> — نتأكد باختبار صريح قبل الإطلاق أن أي مسار خارج المجلد يُرفض.</td>
+    </tr>
+  </table>
+
+  <div class="note">
+    الرخصة: «كما هي بلا ضمان» تبقى في ملف <b>LICENSE</b> وحده — موجودة ومطمئنة لك،
+    وما تثقل الكلام الموجَّه للناس.
+  </div>
+
+</div>
+</body>
+</html>
