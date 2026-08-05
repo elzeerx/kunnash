@@ -43,7 +43,7 @@
 
         <!-- لوحة البداية -->
         <div id="empty-state" class="empty-state">
-          <h2>حيّاك الله</h2>
+          <h2 id="greeting">حيّاك الله</h2>
           <div id="connection-chip" class="chips-row"></div>
 
           <div class="home-grid">
@@ -62,6 +62,12 @@
 
       <!-- صندوق الكتابة -->
       <div class="composer-wrap">
+        <!-- مؤشر العمل: يظهر ما دام التشغيل جاريًا ويسمّي ما يفعله الآن -->
+        <div id="run-status" class="run-status hidden">
+          <span class="run-dot"></span>
+          <span id="run-status-text">يعمل…</span>
+          <span id="run-status-time" class="run-time"></span>
+        </div>
         <div class="composer">
           <div id="attach-list" class="attach-list"></div>
           <textarea id="input" rows="1" placeholder="اكتب رسالتك… (Enter للإرسال، Shift+Enter لسطر جديد، أو اسحب ملفات هنا)"></textarea>
@@ -85,11 +91,19 @@
   <div id="settings-modal" class="modal hidden">
     <div class="modal-card">
       <div class="modal-head">
-        <h3>⚙️ الاتصال بالنموذج</h3>
+        <h3>⚙️ الإعدادات</h3>
         <button id="btn-close-settings" class="btn-x">✕</button>
       </div>
+
+      <h4 class="section-title">عنك</h4>
+      <div class="conn-form">
+        <label for="profile-name">الاسم الذي تحب أن يناديك به</label>
+        <input id="profile-name" type="text" placeholder="مثال: نوّاف" />
+      </div>
+
+      <h4 class="section-title">الاتصال بالنموذج</h4>
       <p class="modal-note">اختر خدمة جاهزة أو اكتب أي خدمة تتكلم لغة OpenAI.
-      المفتاح يُحفظ مشفَّرًا على جهازك، ولا يُرسل إلا للعنوان المكتوب أدناه.</p>
+      المفتاح يُحفظ مشفَّرًا على جهازك، ولكل خدمة مفتاحها ونموذجها.</p>
 
       <div id="preset-row" class="preset-row"></div>
       <p id="preset-hint" class="preset-hint"></p>
@@ -100,12 +114,17 @@
       </div>
 
       <div class="conn-form">
-        <label for="conn-model">النموذج</label>
+        <label for="conn-model">النموذج المختار</label>
         <div class="model-row">
-          <input id="conn-model" type="text" dir="ltr" placeholder="اكتب الاسم أو حدّث القائمة واختر" list="models-list" />
+          <input id="conn-model" type="text" dir="ltr" placeholder="اسم النموذج" />
           <button id="btn-refresh-models" class="btn-ghost-dark" title="جلب قائمة النماذج من الخدمة">↻ القائمة</button>
         </div>
-        <datalist id="models-list"></datalist>
+
+        <div id="model-picker-box" class="model-picker-box hidden">
+          <input id="model-filter" type="text" placeholder="ابحث في القائمة… (مثال: sonnet)" />
+          <select id="model-list" size="6"></select>
+          <span id="model-count" class="label-note"></span>
+        </div>
 
         <label for="conn-key">المفتاح <span id="key-optional-note" class="label-note hidden">— الخدمة المحلية لا تحتاجه</span></label>
         <input id="conn-key" type="password" dir="ltr" placeholder="sk-..." />

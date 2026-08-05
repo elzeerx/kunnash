@@ -121,12 +121,61 @@ describe('تشفير المفتاح في الإعدادات', () => {
       encryptString: (s) => xor(Buffer.from(s, 'utf8')),
       decryptString: (b) => xor(Buffer.from(b)).toString('utf8'),
     });
-    ws2.saveConnection({ apiKey: 'sk-secret-999', model: 'm' });
+    ws2.saveConnection({ baseUrl: 'https://openrouter.ai/api/v1', apiKey: 'sk-secret-999', model: 'm' });
 
     const onDisk = fs.readFileSync(path.join(dir, 'config.json'), 'utf8');
     assert.ok(!onDisk.includes('sk-secret-999'), 'المفتاح ظاهر نصًا في الملف');
-    assert.ok(onDisk.includes('apiKeyEnc'));
+    assert.ok(onDisk.includes('keyEnc'));
     assert.strictEqual(ws2.loadConnection().apiKey, 'sk-secret-999');
+  });
+
+  // السلوك الذي طلبه نوّاف: تبديل الخدمة لا يفقد ما قبلها
+  test('لكل خدمة مفتاحها ونموذجها — والتنقل بينها لا يفقد شيئًا', () => {
+    delete require.cache[require.resolve('../lib/workspace')];
+    const w = require('../lib/workspace');
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'kunnash-svc-'));
+    const xor = (buf) => Buffer.from(buf.map((b) => b ^ 0x5a));
+    w.init(dir, {
+      encryptString: (x) => xor(Buffer.from(x, 'utf8')),
+      decryptString: (b) => xor(Buffer.from(b)).toString('utf8'),
+    });
+
+    w.saveConnection({ baseUrl: 'https://openrouter.ai/api/v1', apiKey: 'sk-or', model: 'anthropic/claude' });
+    w.saveConnection({ baseUrl: 'https://api.openai.com/v1', apiKey: 'sk-oai', model: 'gpt-5.5' });
+
+    // الخدمة الحالية هي الأخيرة
+    let c = w.loadConnection();
+    assert.strictEqual(c.apiKey, 'sk-oai');
+    assert.strictEqual(c.model, 'gpt-5.5');
+
+    // العودة للأولى تجدها كما تُركت
+    w.saveConnection({ baseUrl: 'https://openrouter.ai/api/v1' });
+    c = w.loadConnection();
+    assert.strictEqual(c.apiKey, 'sk-or', 'مفتاح OpenRouter ضاع بالتنقل');
+    assert.strictEqual(c.model, 'anthropic/claude', 'نموذج OpenRouter ضاع بالتنقل');
+
+    // الخدمة المحلية بلا مفتاح لا تُلوَّث بمفتاح غيرها
+    w.saveConnection({ baseUrl: 'http://localhost:11434/v1', model: 'llama3' });
+    c = w.loadConnection();
+    assert.strictEqual(c.model, 'llama3');
+    assert.strictEqual(c.apiKey, undefined, 'مفتاح خدمة أخرى تسرّب للمحلية');
+
+    const svcs = w.connectionServices();
+    assert.deepStrictEqual(Object.keys(svcs).sort(),
+      ['api.openai.com', 'localhost:11434', 'openrouter.ai']);
+    assert.strictEqual(svcs['openrouter.ai'].hasKey, true);
+    assert.strictEqual(svcs['localhost:11434'].hasKey, false);
+  });
+
+  test('الملف الشخصي يُحفظ ويُقرأ ويُمسح', () => {
+    delete require.cache[require.resolve('../lib/workspace')];
+    const w = require('../lib/workspace');
+    w.init(fs.mkdtempSync(path.join(os.tmpdir(), 'kunnash-prof-')));
+    assert.deepStrictEqual(w.loadProfile(), {});
+    w.saveProfile({ name: 'نوّاف' });
+    assert.strictEqual(w.loadProfile().name, 'نوّاف');
+    w.saveProfile({ name: '' });
+    assert.strictEqual(w.loadProfile().name, undefined);
   });
 
   test('مفتاح قديم نصي يُشفَّر تلقائيًا عند الإقلاع', () => {
@@ -142,7 +191,9 @@ describe('تشفير المفتاح في الإعدادات', () => {
     });
     const onDisk = fs.readFileSync(path.join(dir, 'config.json'), 'utf8');
     assert.ok(!onDisk.includes('sk-old-plain'), 'المفتاح القديم بقي نصًا');
+    assert.ok(onDisk.includes('services'), 'لم يُهاجر للشكل الجديد');
     assert.strictEqual(ws3.loadConnection().apiKey, 'sk-old-plain');
+    assert.strictEqual(ws3.loadConnection().model, 'م');
   });
 });
 

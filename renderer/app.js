@@ -72,6 +72,10 @@ function applyConnection(info) {
   modelChipEl.classList.toggle('unset', !ready);
 }
 
+function applyGreeting(name) {
+  $('#greeting').textContent = name ? `حيّاك الله يا ${name}` : 'حيّاك الله';
+}
+
 async function chooseWorkspace() {
   const info = await window.kunnash.chooseWorkspace();
   if (!info) return;
@@ -669,11 +673,37 @@ function runForCurrentView() {
   return null;
 }
 
+// مؤشر العمل: ما دام تشغيل هذه الشاشة جاريًا يبقى ظاهرًا، ويسمّي آخر أداة
+// نفّذها ويعدّ الثواني — فالمستخدم يعرف أنه يعمل وأين وصل، لا شاشة صامتة.
+const runStatusEl = $('#run-status');
+let runTicker = null;
+
+function updateRunStatus() {
+  const run = runForCurrentView();
+  runStatusEl.classList.toggle('hidden', !run);
+  if (!run) {
+    if (runTicker) { clearInterval(runTicker); runTicker = null; }
+    return;
+  }
+  $('#run-status-text').textContent = run.tools.length
+    ? run.tools[run.tools.length - 1]
+    : 'يفكّر…';
+  const tick = () => {
+    const secs = Math.floor((Date.now() - run.startedAt) / 1000);
+    $('#run-status-time').textContent = secs < 60
+      ? `${secs} ث`
+      : `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
+  };
+  tick();
+  if (!runTicker) runTicker = setInterval(tick, 1000);
+}
+
 function updateSendState() {
   const run = runForCurrentView();
   sendBtn.disabled = false;
   sendBtn.textContent = run ? '⏹ إيقاف' : 'إرسال';
   sendBtn.classList.toggle('btn-stop', Boolean(run));
+  updateRunStatus();
 }
 
 // يربط تشغيلًا بالشاشة الحالية ويعرض ما تراكم فيه حتى الآن
@@ -702,6 +732,7 @@ async function dispatch(payload) {
     viewToken,
     payload,
     model: connection ? connection.model : '',
+    startedAt: Date.now(),
     text: '',
     tools: [],
     els: null,
@@ -717,6 +748,10 @@ function finishRun(run) {
   runs.delete(run.requestId);
   updateSendState();
   refreshSessions();
+  // النموذج قد ينشئ مهارة أو عميلًا أثناء التشغيل (save_skill) — نعيد قراءة
+  // المكتبة فتظهر فورًا في قائمة التفعيل ولوحة البداية بلا إعادة تشغيل
+  populateActivation();
+  renderHome();
   if (run.els) { scrollDown(); inputEl.focus(); }
 }
 
@@ -744,6 +779,7 @@ window.kunnash.onChatEvent('chat:tool', ({ requestId, name, input }) => {
   if (!run) return;
   const label = toolLabel(name, input);
   run.tools.push(label);
+  updateRunStatus();
   if (run.els) {
     const chip = document.createElement('span');
     chip.className = 'tool-chip';
@@ -787,44 +823,64 @@ window.kunnash.onChatEvent('chat:error', ({ requestId, message }) => {
   finishRun(run);
 });
 
-// ---------- الاتصال بالنموذج ----------
+// ---------- الإعدادات: عنك + الاتصال بالنموذج ----------
 const settingsModal = $('#settings-modal');
 const connStatusEl = $('#conn-status');
 const presetRowEl = $('#preset-row');
 const presetHintEl = $('#preset-hint');
 const orLinkRowEl = $('#or-link-row');
 const creditsLineEl = $('#credits-line');
+const modelBoxEl = $('#model-picker-box');
+const modelListEl = $('#model-list');
 
 let presets = [];
+let allModels = [];        // آخر قائمة جُلبت — تُفلتر محليًا بلا طلب جديد
+let connServices = {};     // { host: { model, hasKey } } لكل خدمة محفوظة
 
+function hostOf(u) { try { return new URL(u).host.toLowerCase(); } catch { return ''; } }
 function isOpenRouterUrl(u) {
-  try { const h = new URL(u).hostname; return h === 'openrouter.ai' || h.endsWith('.openrouter.ai'); }
-  catch { return false; }
+  const h = hostOf(u).split(':')[0];
+  return h === 'openrouter.ai' || h.endsWith('.openrouter.ai');
 }
 function isLocalServiceUrl(u) {
-  try { const h = new URL(u).hostname; return h === 'localhost' || h === '127.0.0.1'; }
-  catch { return false; }
+  const h = hostOf(u).split(':')[0];
+  return h === 'localhost' || h === '127.0.0.1';
 }
 
-// عناصر تتبدل حسب العنوان المكتوب: زر الربط لـOpenRouter، وملاحظة «بلا مفتاح»
-// للخدمة المحلية، ومفتاح سياسة البيانات — كلها من مصدر واحد هو حقل العنوان
+// عناصر تتبدل حسب العنوان المكتوب — من مصدر واحد هو حقل العنوان
 function refreshConnForm() {
   const url = $('#conn-url').value.trim();
   const or = isOpenRouterUrl(url);
   orLinkRowEl.classList.toggle('hidden', !or);
   $('#data-policy-row').classList.toggle('hidden', !or);
   $('#key-optional-note').classList.toggle('hidden', !isLocalServiceUrl(url));
+  creditsLineEl.classList.toggle('hidden', !or);
   for (const b of presetRowEl.querySelectorAll('.preset-btn')) {
-    b.classList.toggle('active', b.dataset.url === url);
-    if (b.dataset.url === url) presetHintEl.textContent = b.dataset.hint;
+    const active = b.dataset.url === url;
+    b.classList.toggle('active', active);
+    if (active) presetHintEl.textContent = b.dataset.hint;
   }
 }
 
+// تبديل الخدمة يبدّل كل ما يخصها: نموذجها المحفوظ، وحالة مفتاحها،
+// والقائمة تُفرَّغ لأن نماذج خدمة لا تصلح لأخرى.
 function applyPreset(p) {
   $('#conn-label').value = p.label;
   $('#conn-url').value = p.baseUrl;
-  if (p.exampleModel && !$('#conn-model').value.trim()) $('#conn-model').value = p.exampleModel;
   presetHintEl.textContent = p.hint;
+
+  const saved = connServices[hostOf(p.baseUrl)] || {};
+  $('#conn-model').value = saved.model || p.exampleModel || '';
+  $('#conn-key').value = '';
+  $('#conn-key').placeholder = saved.hasKey
+    ? '•••••••• محفوظ لهذه الخدمة — اتركه فارغًا لإبقائه'
+    : (p.needsKey ? 'sk-...' : 'لا يحتاج مفتاحًا');
+
+  allModels = [];
+  modelListEl.innerHTML = '';
+  modelBoxEl.classList.add('hidden');
+  connStatusEl.className = 'test-status';
+  connStatusEl.textContent = '';
   refreshConnForm();
 }
 
@@ -842,8 +898,45 @@ async function renderPresets() {
   }
 }
 
+// ---------- منتقي النماذج ----------
+// قائمة حقيقية لا datalist: الأخيرة تفلتر بقيمة الحقل، فبعد اختيار نموذج
+// لا يبقى في القائمة إلا هو — فيتعذّر تبديله. الفلترة الآن بحقل مستقل.
+function renderModelList() {
+  const q = $('#model-filter').value.trim().toLowerCase();
+  const shown = q ? allModels.filter((m) => (m.id + ' ' + m.name).toLowerCase().includes(q)) : allModels;
+  modelListEl.innerHTML = '';
+  for (const m of shown.slice(0, 400)) {
+    const o = document.createElement('option');
+    o.value = m.id;
+    o.textContent = m.id === m.name ? m.id : `${m.id}  —  ${m.name}`;
+    if (m.id === $('#conn-model').value.trim()) o.selected = true;
+    modelListEl.appendChild(o);
+  }
+  $('#model-count').textContent = q
+    ? `${shown.length} من ${allModels.length}`
+    : `${allModels.length} نموذجًا`;
+}
+
+async function refreshModels() {
+  const btn = $('#btn-refresh-models');
+  btn.disabled = true; btn.textContent = '…';
+  await saveSettings(true);   // القائمة تُجلب من العنوان المكتوب فعلًا
+  const res = await window.kunnash.listModels();
+  btn.disabled = false; btn.textContent = '↻ القائمة';
+  connStatusEl.className = 'test-status';
+  if (!res.ok) {
+    connStatusEl.classList.add('fail');
+    connStatusEl.textContent = '⛔ ' + res.error;
+    return;
+  }
+  allModels = res.models;
+  $('#model-filter').value = '';
+  modelBoxEl.classList.remove('hidden');
+  renderModelList();
+}
+
 async function refreshCredits() {
-  creditsLineEl.classList.add('hidden');
+  creditsLineEl.textContent = '';
   const c = await window.kunnash.getCredits();
   if (!c.ok || !c.credits) return;
   const { usage, remaining } = c.credits;
@@ -851,12 +944,15 @@ async function refreshCredits() {
   if (usage != null) parts.push(`استُهلك $${Number(usage).toFixed(2)}`);
   parts.push(remaining == null ? 'بلا حد للرصيد' : `المتبقي $${Number(remaining).toFixed(2)}`);
   creditsLineEl.textContent = '💳 ' + parts.join(' · ');
-  creditsLineEl.classList.remove('hidden');
 }
 
 async function openSettings() {
   await renderPresets();
+  const prof = await window.kunnash.getProfile();
+  $('#profile-name').value = prof.name || '';
+
   const c = await window.kunnash.getConnection();
+  connServices = c.services || {};
   $('#conn-label').value = c.label || '';
   $('#conn-url').value = c.baseUrl || '';
   $('#conn-model').value = c.model || '';
@@ -867,7 +963,9 @@ async function openSettings() {
   connStatusEl.className = 'test-status';
   connStatusEl.textContent = '';
   $('#or-link-status').textContent = '';
-  $('#models-list').innerHTML = '';
+  allModels = [];
+  modelListEl.innerHTML = '';
+  modelBoxEl.classList.add('hidden');
   refreshConnForm();
   settingsModal.classList.remove('hidden');
   refreshCredits();
@@ -886,12 +984,15 @@ function connectionPatch() {
 }
 
 async function saveSettings(keepOpen) {
+  await window.kunnash.saveProfile({ name: $('#profile-name').value.trim() });
   await window.kunnash.saveConnection(connectionPatch());
   const c = await window.kunnash.getConnection();
+  connServices = c.services || {};
   applyConnection({
     label: c.label, model: c.model,
     ready: Boolean(c.model && (c.hasKey || isLocalServiceUrl(c.baseUrl))),
   });
+  applyGreeting((await window.kunnash.getProfile()).name);
   if (keepOpen !== true) settingsModal.classList.add('hidden');
 }
 
@@ -921,25 +1022,6 @@ async function linkOpenRouterFlow() {
     st.classList.add('fail');
     st.textContent = '⛔ ' + res.error;
   }
-}
-
-async function refreshModels() {
-  const btn = $('#btn-refresh-models');
-  btn.disabled = true; btn.textContent = '…';
-  await saveSettings(true);   // القائمة تُجلب من العنوان المكتوب فعلًا
-  const res = await window.kunnash.listModels();
-  btn.disabled = false; btn.textContent = '↻ القائمة';
-  connStatusEl.className = 'test-status';
-  if (!res.ok) { connStatusEl.classList.add('fail'); connStatusEl.textContent = '⛔ ' + res.error; return; }
-  const dl = $('#models-list');
-  dl.innerHTML = '';
-  for (const m of res.models) {
-    const o = document.createElement('option');
-    o.value = m.id;
-    o.label = m.name;
-    dl.appendChild(o);
-  }
-  connStatusEl.textContent = `وصلت ${res.models.length} نموذجًا — اكتب في الحقل للتصفية`;
 }
 
 // ---------- مكتبة العملاء والمهارات ----------
@@ -1071,6 +1153,10 @@ $('#btn-test-conn').onclick = testConnection;
 $('#btn-link-or').onclick = linkOpenRouterFlow;
 $('#btn-refresh-models').onclick = refreshModels;
 $('#conn-url').addEventListener('input', refreshConnForm);
+$('#model-filter').addEventListener('input', renderModelList);
+modelListEl.addEventListener('change', () => {
+  if (modelListEl.value) $('#conn-model').value = modelListEl.value;
+});
 modelChipEl.onclick = openSettings;
 settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal) settingsModal.classList.add('hidden'); });
 
@@ -1082,6 +1168,7 @@ activationEl.addEventListener('change', () => {
 
 // البداية
 (async () => {
+  applyGreeting((await window.kunnash.getProfile()).name);
   applyWorkspace(await window.kunnash.getWorkspace());
   refreshSessions();
   renderHome();

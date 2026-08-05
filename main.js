@@ -91,10 +91,19 @@ ipcMain.handle('library:template', (_e, { type, id }) => templateFor(type, id));
 
 // ---------- IPC: الاتصال بالنموذج ----------
 ipcMain.handle('connection:get', () => {
-  // المفتاح لا يعبر الجسر: الواجهة تعرف أنه محفوظ ولا تعرف قيمته
+  // المفتاح لا يعبر الجسر: الواجهة تعرف أنه محفوظ ولا تعرف قيمته.
+  // services يخبرها بما هو محفوظ لكل خدمة فتعرضه فور تبديل الخدمة.
   const { label, baseUrl, model, apiKey, dataPolicy } = core.loadConnection();
-  return { label, baseUrl, model, dataPolicy, hasKey: Boolean(apiKey) };
+  return {
+    label, baseUrl, model, dataPolicy,
+    hasKey: Boolean(apiKey),
+    services: core.connectionServices(),
+  };
 });
+
+// ---------- IPC: الملف الشخصي ----------
+ipcMain.handle('profile:get', () => core.loadProfile());
+ipcMain.handle('profile:save', (_e, patch) => core.saveProfile(patch));
 ipcMain.handle('connection:presets', () => core.PRESETS);
 
 // الربط بضغطة — المفتاح الناتج يُحفظ هنا مباشرة ولا يمر بالواجهة إطلاقًا.

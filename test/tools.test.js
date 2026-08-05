@@ -62,6 +62,42 @@ describe('الكتابة والتحرير والحذف', () => {
   });
 });
 
+describe('save_skill — بناء المهارات بالمحادثة', () => {
+  // المهارات في .kunnash وهو ممنوع على الكتابة الحرة عمدًا: باب مسمّى واحد
+  // يفتح ما يجب وحده، فيبقى المخزن (الجلسات والنصوص والمهملات) مغلقًا.
+  test('write_file لا يستطيع الكتابة في مخزن كُنّاش', () => {
+    assert.throws(
+      () => t('write_file').exec({ path: '.kunnash/skills/س/SKILL.md', content: 'x' }, ctx),
+      /مخزن كُنّاش/,
+    );
+  });
+
+  test('save_skill ينشئ مهارة تظهر في المكتبة فورًا', () => {
+    const before = require('../lib/library').listLibrary(root).skills.length;
+    const out = JSON.parse(t('save_skill').exec({
+      kind: 'skill', id: 'تقرير-الأسبوع',
+      content: '---\nname: تقرير الأسبوع\ndescription: متى تُستخدم\n---\n# الخطوات',
+    }, ctx));
+    assert.strictEqual(out.saved, 'تقرير-الأسبوع');
+    const skills = require('../lib/library').listLibrary(root).skills;
+    assert.strictEqual(skills.length, before + 1);
+    assert.ok(skills.some((s) => s.name === 'تقرير الأسبوع'));
+  });
+
+  test('عميل كذلك، ومحتوى بلا ترويسة مرفوض بسبب مفهوم', () => {
+    t('save_skill').exec({ kind: 'agent', id: 'مراجع', content: '---\nname: مراجع\n---\nنص' }, ctx);
+    assert.ok(require('../lib/library').listLibrary(root).agents.some((a) => a.id === 'مراجع'));
+    assert.throws(
+      () => t('save_skill').exec({ kind: 'skill', id: 'س', content: 'بلا ترويسة' }, ctx),
+      /ترويسة/,
+    );
+  });
+
+  test('يطلب إذنًا — ليس من أدوات القراءة الحرة', () => {
+    assert.strictEqual(t('save_skill').permission, 'ask');
+  });
+});
+
 describe('البحث والعثور', () => {
   test('list_files بنمط glob يرتب بالأحدث', () => {
     const out = t('list_files').exec({ pattern: '**/*.md' }, ctx);

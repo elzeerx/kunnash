@@ -212,6 +212,41 @@ html, body {
 #conn-advanced { margin-top: 10px; }
 #conn-advanced summary { font-size: 12px; color: var(--muted); cursor: pointer; margin-bottom: 4px; }
 
+/* منتقي النماذج — قائمة حقيقية بحقل بحث مستقل */
+.model-picker-box {
+  display: flex; flex-direction: column; gap: 6px;
+  margin-top: 8px; padding: 10px;
+  border: 1px solid var(--line); border-radius: 10px; background: var(--bg);
+}
+.model-picker-box select {
+  font-family: inherit; font-size: 12.5px; direction: ltr; text-align: left;
+  border: 1px solid var(--line); border-radius: 8px;
+  background: var(--surface); color: var(--ink); padding: 4px;
+}
+.model-picker-box select:focus { outline: none; border-color: var(--accent-soft); }
+.model-picker-box option { padding: 4px 6px; }
+
+.section-title {
+  font-size: 13px; font-weight: 700; color: var(--ink);
+  margin: 16px 0 6px; padding-bottom: 5px; border-bottom: 1px solid var(--line);
+}
+.section-title:first-of-type { margin-top: 4px; }
+
+/* مؤشر العمل فوق صندوق الكتابة */
+.run-status {
+  display: flex; align-items: center; gap: 8px;
+  margin: 0 auto 8px; max-width: 860px;
+  font-size: 12.5px; color: var(--accent-strong);
+  background: var(--accent-wash); border: 1px solid var(--accent-line);
+  border-radius: 20px; padding: 6px 14px; width: fit-content;
+}
+.run-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--accent); flex: none;
+  animation: run-pulse 1.2s ease-in-out infinite;
+}
+.run-time { color: var(--muted); font-variant-numeric: tabular-nums; }
+
 /* نموذج الاتصال */
 .conn-form { display: flex; flex-direction: column; gap: 4px; }
 .conn-form label { font-size: 12px; color: var(--muted); margin-top: 8px; }

@@ -10,6 +10,8 @@ contextBridge.exposeInMainWorld('kunnash', {
   saveConnection: (patch) => ipcRenderer.invoke('connection:save', patch),
   testConnection: () => ipcRenderer.invoke('connection:test'),
   getPresets: () => ipcRenderer.invoke('connection:presets'),
+  getProfile: () => ipcRenderer.invoke('profile:get'),
+  saveProfile: (patch) => ipcRenderer.invoke('profile:save', patch),
   linkOpenRouter: () => ipcRenderer.invoke('connection:link'),
   listModels: () => ipcRenderer.invoke('connection:models'),
   getCredits: () => ipcRenderer.invoke('connection:credits'),
