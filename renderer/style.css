@@ -184,6 +184,34 @@ html, body {
 .model-chip:hover { border-color: var(--accent-soft); }
 .model-chip.unset { background: var(--surface); border-color: var(--line); color: var(--muted); }
 
+/* التعبئة الجاهزة وربط OpenRouter */
+.preset-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+.preset-btn {
+  font-family: inherit;
+  font-size: 12.5px;
+  padding: 7px 13px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+}
+.preset-btn:hover { border-color: var(--accent-soft); }
+.preset-btn.active { background: var(--accent-wash); border-color: var(--accent); color: var(--accent-strong); font-weight: 600; }
+.preset-hint { font-size: 11.5px; color: var(--muted); min-height: 16px; margin-bottom: 8px; }
+.or-link-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+.model-row { display: flex; gap: 6px; }
+.model-row input { flex: 1; }
+.label-note { font-size: 11px; color: var(--muted); font-weight: 400; }
+.policy-row {
+  display: flex; align-items: flex-start; gap: 8px;
+  font-size: 12.5px; margin-top: 12px; cursor: pointer;
+}
+.policy-row input { margin-top: 3px; accent-color: var(--accent); }
+.credits-line { font-size: 12.5px; color: var(--muted); margin-top: 10px; }
+#conn-advanced { margin-top: 10px; }
+#conn-advanced summary { font-size: 12px; color: var(--muted); cursor: pointer; margin-bottom: 4px; }
+
 /* نموذج الاتصال */
 .conn-form { display: flex; flex-direction: column; gap: 4px; }
 .conn-form label { font-size: 12px; color: var(--muted); margin-top: 8px; }

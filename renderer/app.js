@@ -780,18 +780,87 @@ window.kunnash.onChatEvent('chat:error', ({ requestId, message }) => {
 // ---------- الاتصال بالنموذج ----------
 const settingsModal = $('#settings-modal');
 const connStatusEl = $('#conn-status');
+const presetRowEl = $('#preset-row');
+const presetHintEl = $('#preset-hint');
+const orLinkRowEl = $('#or-link-row');
+const creditsLineEl = $('#credits-line');
+
+let presets = [];
+
+function isOpenRouterUrl(u) {
+  try { const h = new URL(u).hostname; return h === 'openrouter.ai' || h.endsWith('.openrouter.ai'); }
+  catch { return false; }
+}
+function isLocalServiceUrl(u) {
+  try { const h = new URL(u).hostname; return h === 'localhost' || h === '127.0.0.1'; }
+  catch { return false; }
+}
+
+// عناصر تتبدل حسب العنوان المكتوب: زر الربط لـOpenRouter، وملاحظة «بلا مفتاح»
+// للخدمة المحلية، ومفتاح سياسة البيانات — كلها من مصدر واحد هو حقل العنوان
+function refreshConnForm() {
+  const url = $('#conn-url').value.trim();
+  const or = isOpenRouterUrl(url);
+  orLinkRowEl.classList.toggle('hidden', !or);
+  $('#data-policy-row').classList.toggle('hidden', !or);
+  $('#key-optional-note').classList.toggle('hidden', !isLocalServiceUrl(url));
+  for (const b of presetRowEl.querySelectorAll('.preset-btn')) {
+    b.classList.toggle('active', b.dataset.url === url);
+    if (b.dataset.url === url) presetHintEl.textContent = b.dataset.hint;
+  }
+}
+
+function applyPreset(p) {
+  $('#conn-label').value = p.label;
+  $('#conn-url').value = p.baseUrl;
+  if (p.exampleModel && !$('#conn-model').value.trim()) $('#conn-model').value = p.exampleModel;
+  presetHintEl.textContent = p.hint;
+  refreshConnForm();
+}
+
+async function renderPresets() {
+  if (!presets.length) presets = await window.kunnash.getPresets();
+  presetRowEl.innerHTML = '';
+  for (const p of presets) {
+    const b = document.createElement('button');
+    b.className = 'preset-btn';
+    b.textContent = p.label;
+    b.dataset.url = p.baseUrl;
+    b.dataset.hint = p.hint;
+    b.onclick = () => applyPreset(p);
+    presetRowEl.appendChild(b);
+  }
+}
+
+async function refreshCredits() {
+  creditsLineEl.classList.add('hidden');
+  const c = await window.kunnash.getCredits();
+  if (!c.ok || !c.credits) return;
+  const { usage, remaining } = c.credits;
+  const parts = [];
+  if (usage != null) parts.push(`استُهلك $${Number(usage).toFixed(2)}`);
+  parts.push(remaining == null ? 'بلا حد للرصيد' : `المتبقي $${Number(remaining).toFixed(2)}`);
+  creditsLineEl.textContent = '💳 ' + parts.join(' · ');
+  creditsLineEl.classList.remove('hidden');
+}
 
 async function openSettings() {
+  await renderPresets();
   const c = await window.kunnash.getConnection();
   $('#conn-label').value = c.label || '';
   $('#conn-url').value = c.baseUrl || '';
   $('#conn-model').value = c.model || '';
+  $('#conn-data-policy').checked = (c.dataPolicy || 'deny') !== 'allow';
   // المفتاح لا يعبر الجسر — الحقل فارغ، ونائبه يخبر أنه محفوظ
   $('#conn-key').value = '';
   $('#conn-key').placeholder = c.hasKey ? '•••••••• محفوظ — اترك الحقل فارغًا لإبقائه' : 'sk-...';
   connStatusEl.className = 'test-status';
   connStatusEl.textContent = '';
+  $('#or-link-status').textContent = '';
+  $('#models-list').innerHTML = '';
+  refreshConnForm();
   settingsModal.classList.remove('hidden');
+  refreshCredits();
 }
 
 // المفتاح يُرسل فقط إن كتب المستخدم واحدًا جديدًا: الحقل الفارغ يعني «لا تغيّره»
@@ -801,6 +870,7 @@ function connectionPatch() {
     label: $('#conn-label').value.trim(),
     baseUrl: $('#conn-url').value.replace(/\s+/g, ''),
     model: $('#conn-model').value.trim(),
+    dataPolicy: $('#conn-data-policy').checked ? 'deny' : 'allow',
     ...(key ? { apiKey: key } : {}),
   };
 }
@@ -808,7 +878,10 @@ function connectionPatch() {
 async function saveSettings(keepOpen) {
   await window.kunnash.saveConnection(connectionPatch());
   const c = await window.kunnash.getConnection();
-  applyConnection({ label: c.label, model: c.model, ready: Boolean(c.hasKey && c.model) });
+  applyConnection({
+    label: c.label, model: c.model,
+    ready: Boolean(c.model && (c.hasKey || isLocalServiceUrl(c.baseUrl))),
+  });
   if (keepOpen !== true) settingsModal.classList.add('hidden');
 }
 
@@ -819,6 +892,44 @@ async function testConnection() {
   const res = await window.kunnash.testConnection();
   if (res.ok) { connStatusEl.classList.add('ok'); connStatusEl.textContent = '✅ يعمل — رد النموذج: ' + res.reply; }
   else { connStatusEl.classList.add('fail'); connStatusEl.textContent = '⛔ ' + res.error; }
+}
+
+async function linkOpenRouterFlow() {
+  const st = $('#or-link-status');
+  st.className = 'test-status';
+  st.textContent = 'فُتح المتصفح — أكمل الموافقة هناك…';
+  await saveSettings(true);   // نثبت العنوان قبل الربط
+  const res = await window.kunnash.linkOpenRouter();
+  if (res.ok) {
+    st.classList.add('ok');
+    st.textContent = '✅ تم الربط وحُفظ المفتاح';
+    $('#conn-key').value = '';
+    $('#conn-key').placeholder = '•••••••• محفوظ — اترك الحقل فارغًا لإبقائه';
+    await saveSettings(true);
+    refreshCredits();
+  } else {
+    st.classList.add('fail');
+    st.textContent = '⛔ ' + res.error;
+  }
+}
+
+async function refreshModels() {
+  const btn = $('#btn-refresh-models');
+  btn.disabled = true; btn.textContent = '…';
+  await saveSettings(true);   // القائمة تُجلب من العنوان المكتوب فعلًا
+  const res = await window.kunnash.listModels();
+  btn.disabled = false; btn.textContent = '↻ القائمة';
+  connStatusEl.className = 'test-status';
+  if (!res.ok) { connStatusEl.classList.add('fail'); connStatusEl.textContent = '⛔ ' + res.error; return; }
+  const dl = $('#models-list');
+  dl.innerHTML = '';
+  for (const m of res.models) {
+    const o = document.createElement('option');
+    o.value = m.id;
+    o.label = m.name;
+    dl.appendChild(o);
+  }
+  connStatusEl.textContent = `وصلت ${res.models.length} نموذجًا — اكتب في الحقل للتصفية`;
 }
 
 // ---------- مكتبة العملاء والمهارات ----------
@@ -943,6 +1054,9 @@ $('#btn-settings').onclick = openSettings;
 $('#btn-close-settings').onclick = () => settingsModal.classList.add('hidden');
 $('#btn-save-settings').onclick = saveSettings;
 $('#btn-test-conn').onclick = testConnection;
+$('#btn-link-or').onclick = linkOpenRouterFlow;
+$('#btn-refresh-models').onclick = refreshModels;
+$('#conn-url').addEventListener('input', refreshConnForm);
 modelChipEl.onclick = openSettings;
 settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal) settingsModal.classList.add('hidden'); });
 

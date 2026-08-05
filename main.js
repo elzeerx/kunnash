@@ -2,11 +2,12 @@
 // المنطق (الجلسات، الدردشة، الإعدادات) في lib/core.js، والمخزن في
 // <مساحة العمل>/.kunnash/ — وهذا الملف نقلٌ وواجهةُ نظام فقط.
 
-const { app, BrowserWindow, ipcMain, shell, dialog, Notification } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, dialog, Notification, safeStorage } = require('electron');
 const path = require('path');
 
 const core = require('./lib/core');
 const ws = require('./lib/workspace');
+const { linkOpenRouter } = require('./lib/oauth');
 const { resolveInWorkspace, forgetRoot } = require('./lib/paths');
 const { listLibrary, readItem, saveItem, deleteItem, templateFor } = require('./lib/library');
 
@@ -45,7 +46,14 @@ function createWindow() {
 app.setName(APP_NAME);
 
 app.whenReady().then(() => {
-  ws.init(app.getPath('userData'));
+  // المفتاح يُشفَّر بـsafeStorage (Keychain بهوية التطبيق) حيثما أتاحه النظام
+  const crypto = safeStorage.isEncryptionAvailable()
+    ? {
+        encryptString: (s) => safeStorage.encryptString(s),
+        decryptString: (b) => safeStorage.decryptString(b),
+      }
+    : null;
+  ws.init(app.getPath('userData'), crypto);
   createWindow();
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
 });
@@ -84,14 +92,51 @@ ipcMain.handle('library:template', (_e, { type, id }) => templateFor(type, id));
 // ---------- IPC: الاتصال بالنموذج ----------
 ipcMain.handle('connection:get', () => {
   // المفتاح لا يعبر الجسر: الواجهة تعرف أنه محفوظ ولا تعرف قيمته
-  const { label, baseUrl, model, apiKey } = core.loadConnection();
-  return { label, baseUrl, model, hasKey: Boolean(apiKey) };
+  const { label, baseUrl, model, apiKey, dataPolicy } = core.loadConnection();
+  return { label, baseUrl, model, dataPolicy, hasKey: Boolean(apiKey) };
+});
+ipcMain.handle('connection:presets', () => core.PRESETS);
+
+// الربط بضغطة — المفتاح الناتج يُحفظ هنا مباشرة ولا يمر بالواجهة إطلاقًا.
+// KUNNASH_OR_TEST_BASE منفذ اختبار للتطوير: يوجّه التدفق لمحاكاة محلية.
+const OR_TEST_BASE = process.env.KUNNASH_OR_TEST_BASE || null;
+let cancelOauth = null;
+ipcMain.handle('connection:link', async () => {
+  if (cancelOauth) cancelOauth();   // محاولة سابقة معلقة تُلغى
+  try {
+    const { apiKey } = await linkOpenRouter({
+      openUrl: (url) => shell.openExternal(url),
+      onCancelHandle: (c) => { cancelOauth = c; },
+      ...(OR_TEST_BASE ? { authBase: OR_TEST_BASE, apiBase: `${OR_TEST_BASE}/api/v1` } : {}),
+    });
+    core.saveConnection({ apiKey });
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: String(err && err.message || err) };
+  } finally {
+    cancelOauth = null;
+  }
+});
+
+ipcMain.handle('connection:models', async () => {
+  try {
+    return { ok: true, models: await core.listModels(core.loadConnection()) };
+  } catch (err) {
+    return { ok: false, error: String(err && err.message || err) };
+  }
+});
+ipcMain.handle('connection:credits', async () => {
+  try {
+    return { ok: true, credits: await core.getCredits(core.loadConnection()) };
+  } catch (err) {
+    return { ok: false, error: String(err && err.message || err) };
+  }
 });
 ipcMain.handle('connection:save', (_e, patch) => core.saveConnection(patch));
 ipcMain.handle('connection:test', async () => {
   const cfg = core.loadConnection();
-  if (!cfg.apiKey) return { ok: false, error: 'أدخل المفتاح أولًا ثم احفظ' };
-  if (!cfg.model) return { ok: false, error: 'اكتب اسم النموذج أولًا ثم احفظ' };
+  // النموذج شرط دائمًا؛ المفتاح شرط إلا للخدمات المحلية — نفس منطق الإرسال
+  if (!cfg.model) return { ok: false, error: 'اختر النموذج أولًا ثم احفظ' };
   try {
     const reply = await core.testConnection(cfg);
     return { ok: true, reply };

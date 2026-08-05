@@ -9,6 +9,10 @@ contextBridge.exposeInMainWorld('kunnash', {
   getConnection: () => ipcRenderer.invoke('connection:get'),
   saveConnection: (patch) => ipcRenderer.invoke('connection:save', patch),
   testConnection: () => ipcRenderer.invoke('connection:test'),
+  getPresets: () => ipcRenderer.invoke('connection:presets'),
+  linkOpenRouter: () => ipcRenderer.invoke('connection:link'),
+  listModels: () => ipcRenderer.invoke('connection:models'),
+  getCredits: () => ipcRenderer.invoke('connection:credits'),
 
   // مكتبة العملاء والمهارات
   libraryList: () => ipcRenderer.invoke('library:list'),

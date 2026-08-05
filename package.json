@@ -8,7 +8,7 @@
   "private": true,
   "scripts": {
     "start": "electron .",
-    "test": "node --test \"test/**/*.test.js\""
+    "test": "node --test --test-force-exit --test-timeout=20000 \"test/**/*.test.js\""
   },
   "dependencies": {},
   "devDependencies": {

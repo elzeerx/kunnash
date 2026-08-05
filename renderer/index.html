@@ -88,22 +88,43 @@
         <h3>⚙️ الاتصال بالنموذج</h3>
         <button id="btn-close-settings" class="btn-x">✕</button>
       </div>
-      <p class="modal-note">أي خدمة تتكلم لغة OpenAI تعمل هنا — OpenRouter أو مزوّد مباشر أو نموذج على جهازك.
-      المفتاح يُحفظ محليًا، ولا يُرسل إلا للعنوان المكتوب أدناه.</p>
+      <p class="modal-note">اختر خدمة جاهزة أو اكتب أي خدمة تتكلم لغة OpenAI.
+      المفتاح يُحفظ مشفَّرًا على جهازك، ولا يُرسل إلا للعنوان المكتوب أدناه.</p>
+
+      <div id="preset-row" class="preset-row"></div>
+      <p id="preset-hint" class="preset-hint"></p>
+
+      <div id="or-link-row" class="or-link-row hidden">
+        <button id="btn-link-or" class="btn-primary">🔗 الربط بضغطة — يفتح المتصفح</button>
+        <span id="or-link-status" class="test-status"></span>
+      </div>
 
       <div class="conn-form">
-        <label for="conn-label">الاسم الظاهر</label>
-        <input id="conn-label" type="text" placeholder="OpenRouter" />
+        <label for="conn-model">النموذج</label>
+        <div class="model-row">
+          <input id="conn-model" type="text" dir="ltr" placeholder="اكتب الاسم أو حدّث القائمة واختر" list="models-list" />
+          <button id="btn-refresh-models" class="btn-ghost-dark" title="جلب قائمة النماذج من الخدمة">↻ القائمة</button>
+        </div>
+        <datalist id="models-list"></datalist>
 
-        <label for="conn-url">عنوان الخدمة (Base URL)</label>
-        <input id="conn-url" type="text" dir="ltr" placeholder="https://openrouter.ai/api/v1" />
-
-        <label for="conn-model">اسم النموذج</label>
-        <input id="conn-model" type="text" dir="ltr" placeholder="anthropic/claude-sonnet-4.5" />
-
-        <label for="conn-key">المفتاح</label>
+        <label for="conn-key">المفتاح <span id="key-optional-note" class="label-note hidden">— الخدمة المحلية لا تحتاجه</span></label>
         <input id="conn-key" type="password" dir="ltr" placeholder="sk-..." />
+
+        <details id="conn-advanced">
+          <summary>خيارات متقدمة</summary>
+          <label for="conn-label">الاسم الظاهر</label>
+          <input id="conn-label" type="text" placeholder="OpenRouter" />
+          <label for="conn-url">عنوان الخدمة (Base URL)</label>
+          <input id="conn-url" type="text" dir="ltr" placeholder="https://openrouter.ai/api/v1" />
+        </details>
+
+        <label id="data-policy-row" class="policy-row hidden">
+          <input id="conn-data-policy" type="checkbox" checked />
+          <span>لا تمرّر طلباتي لمزوّد يتدرّب على البيانات <span class="label-note">(خيار OpenRouter — قد يحجب نماذج قليلة)</span></span>
+        </label>
       </div>
+
+      <div id="credits-line" class="credits-line hidden"></div>
 
       <div class="modal-actions">
         <button id="btn-save-settings" class="btn-primary">حفظ</button>
