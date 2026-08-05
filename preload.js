@@ -28,6 +28,7 @@ contextBridge.exposeInMainWorld('kunnash', {
 
   // الدردشة
   sendMessage: (payload) => ipcRenderer.invoke('chat:send', payload),
+  cancelChat: (requestId) => ipcRenderer.send('chat:cancel', { requestId }),
   onChatEvent: (channel, cb) => {
     const valid = ['chat:started', 'chat:delta', 'chat:tool', 'chat:done', 'chat:error'];
     if (!valid.includes(channel)) return;

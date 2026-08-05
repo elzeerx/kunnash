@@ -670,9 +670,10 @@ function runForCurrentView() {
 }
 
 function updateSendState() {
-  const busy = Boolean(runForCurrentView());
-  sendBtn.disabled = busy;
-  sendBtn.textContent = busy ? 'يعمل…' : 'إرسال';
+  const run = runForCurrentView();
+  sendBtn.disabled = false;
+  sendBtn.textContent = run ? '⏹ إيقاف' : 'إرسال';
+  sendBtn.classList.toggle('btn-stop', Boolean(run));
 }
 
 // يربط تشغيلًا بالشاشة الحالية ويعرض ما تراكم فيه حتى الآن
@@ -752,7 +753,7 @@ window.kunnash.onChatEvent('chat:tool', ({ requestId, name, input }) => {
   }
 });
 
-window.kunnash.onChatEvent('chat:done', ({ requestId, text }) => {
+window.kunnash.onChatEvent('chat:done', ({ requestId, text, usage }) => {
   const run = runs.get(requestId);
   if (!run) return;
   const finalText = text || run.text || '';
@@ -760,6 +761,15 @@ window.kunnash.onChatEvent('chat:done', ({ requestId, text }) => {
     run.els.bubble.innerHTML = renderMarkdown(finalText);
     linkifyBubble(run.els.bubble);
     addCopyControls(run.els.bubble.closest('.msg'), finalText);
+    // «الرقم الظاهر أرخص أداة ضبط تكلفة» — يظهر فقط حين توجد أدوات أو كلفة
+    if (usage && (usage.calls || usage.cost)) {
+      const meta = run.els.bubble.closest('.msg').querySelector('.meta');
+      const bits = [];
+      if (usage.calls) bits.push(`${usage.calls} أداة`);
+      if (usage.tokens) bits.push(`${(usage.tokens / 1000).toFixed(1)}ك رمز`);
+      if (usage.cost) bits.push(`$${usage.cost.toFixed(3)}`);
+      meta.textContent += (meta.textContent ? ' · ' : '') + bits.join(' · ');
+    }
   }
   notifyDone(run, finalText);
   finishRun(run);
@@ -1032,7 +1042,11 @@ function closeLibEditor() {
 }
 
 // ---------- ربط الأحداث ----------
-sendBtn.onclick = sendMessage;
+sendBtn.onclick = () => {
+  const run = runForCurrentView();
+  if (run) window.kunnash.cancelChat(run.requestId);
+  else sendMessage();
+};
 inputEl.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
 });

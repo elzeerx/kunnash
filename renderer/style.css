@@ -667,3 +667,4 @@ html, body {
 .btn-danger:hover { background: var(--danger-wash); }
 .lib-status { font-size: 12px; color: var(--ok); }
 .lib-status.fail { color: var(--danger); }
+.btn-send.btn-stop { background: var(--danger); }

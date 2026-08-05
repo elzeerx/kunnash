@@ -1,0 +1,164 @@
+// اختبارات الأدوات والنص المحفوظ — ما لم تغطه اختبارات الحلقة.
+
+const { test, describe, before, after } = require('node:test');
+const assert = require('node:assert');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+
+const { TOOL_MAP, globToRegex, assertPublicUrl } = require('../lib/agent/tools');
+const transcript = require('../lib/agent/transcript');
+const { validateArgs, parseArgs } = require('../lib/agent/registry');
+const { forgetRoot } = require('../lib/paths');
+
+let root, ctx;
+const t = (name) => TOOL_MAP.get(name);
+
+before(() => {
+  root = fs.mkdtempSync(path.join(os.tmpdir(), 'kunnash-tools-'));
+  ctx = { root };
+  fs.mkdirSync(path.join(root, 'تقارير'));
+  fs.writeFileSync(path.join(root, 'تقارير', 'يوليو.md'), '# تقرير يوليو\nالمبيعات: قيد التنفيذ\nالمشتريات: قيد التنفيذ');
+  fs.writeFileSync(path.join(root, 'ملاحظة.txt'), 'المورد الرئيسي: النور');
+});
+after(() => forgetRoot(root));
+
+describe('الكتابة والتحرير والحذف', () => {
+  test('write_file ينشئ بمجلدات ناقصة ويميز الإنشاء عن الطمس', () => {
+    const r1 = JSON.parse(t('write_file').exec({ path: 'مخرجات/جديد/أ.md', content: 'نص' }, ctx));
+    assert.strictEqual(r1.state, 'created');
+    const r2 = JSON.parse(t('write_file').exec({ path: 'مخرجات/جديد/أ.md', content: 'نص ثانٍ' }, ctx));
+    assert.strictEqual(r2.state, 'overwritten');
+  });
+
+  test('edit_file: الغامض يرفض بعدد المواضع، وreplace_all يعالجها', () => {
+    assert.throws(
+      () => t('edit_file').exec({ path: 'تقارير/يوليو.md', old_text: 'قيد التنفيذ', new_text: 'منجز' }, ctx),
+      /يطابق 2 مواضع/,
+    );
+    const r = JSON.parse(t('edit_file').exec({ path: 'تقارير/يوليو.md', old_text: 'قيد التنفيذ', new_text: 'منجز', replace_all: true }, ctx));
+    assert.strictEqual(r.replacements, 2);
+    assert.match(fs.readFileSync(path.join(root, 'تقارير', 'يوليو.md'), 'utf8'), /المبيعات: منجز/);
+  });
+
+  test('edit_file على نص غائب يوجه لقراءة الملف', () => {
+    assert.throws(
+      () => t('edit_file').exec({ path: 'ملاحظة.txt', old_text: 'غير موجود', new_text: 'x' }, ctx),
+      /اقرأه وانسخ النص حرفيًا/,
+    );
+  });
+
+  test('delete_file نقل إلى المهملات لا حذف — والمحتوى سليم فيها', () => {
+    fs.writeFileSync(path.join(root, 'مسودة.md'), 'محتوى مهم');
+    const r = JSON.parse(t('delete_file').exec({ path: 'مسودة.md' }, ctx));
+    assert.ok(!fs.existsSync(path.join(root, 'مسودة.md')));
+    assert.match(r.moved_to, /^\.kunnash\/trash\//);
+    assert.strictEqual(fs.readFileSync(path.join(root, r.moved_to), 'utf8'), 'محتوى مهم');
+  });
+
+  test('لا unlink في الأدوات إطلاقًا (فحص نصي ثابت)', () => {
+    const src = fs.readFileSync(path.join(__dirname, '..', 'lib', 'agent', 'tools.js'), 'utf8');
+    assert.ok(!/fs\.(unlinkSync|rmSync|rmdirSync)\b/.test(src), 'وُجد حذف حقيقي في الأدوات');
+  });
+});
+
+describe('البحث والعثور', () => {
+  test('list_files بنمط glob يرتب بالأحدث', () => {
+    const out = t('list_files').exec({ pattern: '**/*.md' }, ctx);
+    assert.match(out, /تقارير\/يوليو\.md/);
+    assert.match(out, /مخرجات\/جديد\/أ\.md/);
+    assert.ok(!out.includes('ملاحظة.txt'));
+  });
+
+  test('search_files يرجع ملف:سطر:مقتطف', () => {
+    const out = t('search_files').exec({ query: 'المورد الرئيسي' }, ctx);
+    assert.match(out, /^ملاحظة\.txt:1:المورد الرئيسي: النور/m);
+  });
+
+  test('glob: * لا يعبر المجلدات و** يعبرها', () => {
+    assert.ok(globToRegex('*.md').test('a.md'));
+    assert.ok(!globToRegex('*.md').test('dir/a.md'));
+    assert.ok(globToRegex('**/*.md').test('dir/deep/a.md'));
+    assert.ok(globToRegex('تقارير/*.md').test('تقارير/يوليو.md'));
+  });
+
+  test('رابط رمزي هارب لا يظهر في النتائج', () => {
+    const outside = fs.mkdtempSync(path.join(os.tmpdir(), 'kunnash-out-'));
+    fs.writeFileSync(path.join(outside, 'سري.md'), 'خارجي');
+    fs.symlinkSync(path.join(outside, 'سري.md'), path.join(root, 'منفذ.md'));
+    const out = t('list_files').exec({ pattern: '**/*.md' }, ctx);
+    assert.ok(!out.includes('منفذ.md'), 'الرابط الهارب ظهر في القائمة');
+  });
+});
+
+describe('حارس fetch_url', () => {
+  test('العناوين الداخلية والبروتوكولات الغريبة مرفوضة', () => {
+    for (const bad of [
+      'http://localhost:11434/x', 'http://127.0.0.1/x', 'http://10.0.0.5/x',
+      'http://192.168.1.1/x', 'http://172.20.3.4/x', 'http://169.254.1.1/x',
+      'http://server.local/x', 'file:///etc/passwd', 'ftp://x.com/f',
+    ]) {
+      assert.throws(() => assertPublicUrl(bad), Error, bad);
+    }
+  });
+  test('العناوين العامة تمر', () => {
+    assert.ok(assertPublicUrl('https://example.org/صفحة'));
+    assert.ok(assertPublicUrl('http://172.15.0.1/ok'));   // خارج نطاق 172.16-31 الخاص
+  });
+});
+
+describe('التحقق والقسر', () => {
+  test('المرادفات: file_path تصير path', () => {
+    const spec = TOOL_MAP.get('read_file');
+    const v = validateArgs(spec, { file_path: 'ملاحظة.txt' });
+    assert.ok(v.ok);
+    assert.strictEqual(v.value.path, 'ملاحظة.txt');
+  });
+  test('رقم كنص يُقسر، وcontent كمصفوفة تُدمج', () => {
+    const rf = validateArgs(TOOL_MAP.get('read_file'), { path: 'x', offset: '5' });
+    assert.strictEqual(rf.value.offset, 5);
+    const wf = validateArgs(TOOL_MAP.get('write_file'), { path: 'x', content: ['سطر', 'سطران'] });
+    assert.strictEqual(wf.value.content, 'سطر\nسطران');
+  });
+  test('parseArgs يتحمل نصًا حول الكائن', () => {
+    const r = parseArgs('سأستدعي الأداة الآن: {"path":"a.md"} وانتظر النتيجة');
+    assert.ok(r.ok);
+    assert.strictEqual(r.value.path, 'a.md');
+  });
+});
+
+describe('تقليم النص المحفوظ', () => {
+  const mkExchange = (n, big) => ([
+    { role: 'assistant', content: '', tool_calls: [{ id: `c${n}`, type: 'function', function: { name: 'read_file', arguments: '{}' } }] },
+    { role: 'tool', tool_call_id: `c${n}`, content: big ? 'س\n'.repeat(3000) : 'صغير' },
+  ]);
+
+  test('الإخلاء: نتائج الأدوات القديمة تصير سطرًا والبنية سليمة', () => {
+    const messages = [
+      { role: 'user', content: 'ابدأ' },
+      ...mkExchange(1, true), ...mkExchange(2, true), ...mkExchange(3, true),
+      { role: 'assistant', content: 'انتهيت' },
+    ];
+    const pruned = transcript.prune(messages, { keepToolBlocks: 2 });
+    assert.ok(transcript.checkInvariant(pruned), 'الثابت انكسر بعد الإخلاء');
+    assert.match(pruned[2].content, /أُزيلت لتوفير السياق/);       // الأقدم أُخلي
+    assert.match(pruned[4].content, /^س\n/, 'كتلة ضمن آخر اثنتين أُخليت خطأً');
+  });
+
+  test('النافذة: لا تُسقَط tool دون مساعدها مهما ضاق الحد', () => {
+    const messages = [{ role: 'user', content: 'الطلب الأصلي' }];
+    for (let i = 0; i < 30; i++) messages.push(...mkExchange(i, true));
+    for (const maxTokens of [500, 2000, 8000, 20000]) {
+      const pruned = transcript.prune(messages, { maxTokens });
+      assert.ok(transcript.checkInvariant(pruned), `الثابت انكسر عند حد ${maxTokens}`);
+      assert.strictEqual(pruned[0].content, 'الطلب الأصلي', 'الرأس المثبّت ضاع');
+    }
+  });
+
+  test('checkInvariant يكشف الكسر فعلًا (ليس فحصًا شكليًا)', () => {
+    assert.ok(!transcript.checkInvariant([
+      { role: 'user', content: 'س' },
+      { role: 'tool', tool_call_id: 'يتيم', content: 'نتيجة بلا مساعد' },
+    ]));
+  });
+});

@@ -228,6 +228,8 @@ function askPermission(request) {
   });
 }
 
+ipcMain.on('chat:cancel', (_e, { requestId } = {}) => core.cancelChat(requestId));
+
 ipcMain.handle('chat:send', async (_e, params) => {
   const emit = (channel, payload) => {
     if (win && !win.isDestroyed()) win.webContents.send(channel, payload);
