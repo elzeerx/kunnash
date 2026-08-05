@@ -212,6 +212,73 @@ html, body {
 #conn-advanced { margin-top: 10px; }
 #conn-advanced summary { font-size: 12px; color: var(--muted); cursor: pointer; margin-bottom: 4px; }
 
+/* كتل قابلة للنسخ: شيفرة، ومسودات في اقتباس، وجداول */
+.msg .bubble .copyable { position: relative; }
+.block-copy {
+  position: absolute; inset-block-start: 6px; inset-inline-start: 6px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 6px;
+  color: var(--muted); cursor: pointer; font-family: inherit; font-size: 10.5px;
+  padding: 2px 8px; opacity: 0; transition: opacity .15s;
+}
+.copyable:hover .block-copy { opacity: 1; }
+.block-copy:hover { color: var(--accent-strong); border-color: var(--accent-soft); }
+.msg .bubble blockquote {
+  margin: 10px 0; padding: 12px 16px;
+  background: var(--code-bg); border: 1px solid var(--line);
+  border-inline-start: 3px solid var(--accent-soft); border-radius: 10px;
+  white-space: pre-wrap;
+}
+.msg .bubble blockquote p { margin: 0; }
+.msg .bubble blockquote p + p { margin-top: 8px; }
+.msg .bubble table { border-collapse: collapse; margin: 10px 0; font-size: 13px; width: 100%; }
+.msg .bubble th, .msg .bubble td { border: 1px solid var(--line); padding: 6px 10px; text-align: start; }
+.msg .bubble th { background: var(--code-bg); font-weight: 600; }
+.msg .bubble h1, .msg .bubble h2, .msg .bubble h3 { margin: 14px 0 6px; line-height: 1.5; }
+.msg .bubble h1 { font-size: 17px; }
+.msg .bubble h2 { font-size: 15.5px; }
+.msg .bubble h3 { font-size: 14.5px; }
+.msg .bubble ul, .msg .bubble ol { margin: 6px 0; padding-inline-start: 22px; }
+.msg .bubble li { margin: 3px 0; }
+.msg .bubble hr { border: none; border-top: 1px solid var(--line); margin: 14px 0; }
+
+/* بطاقة سؤال النموذج داخل المحادثة */
+.ask-card {
+  max-width: 860px; margin: 0 auto;
+  background: var(--surface); border: 1px solid var(--accent-line);
+  border-inline-start: 3px solid var(--accent);
+  border-radius: 12px; padding: 14px 16px;
+}
+.ask-card.answered { border-color: var(--line); border-inline-start-color: var(--ok); opacity: .85; }
+.ask-question { font-size: 14px; font-weight: 600; margin-bottom: 10px; }
+.ask-options { display: flex; flex-wrap: wrap; gap: 6px; }
+.ask-option, .ask-skip {
+  font-family: inherit; font-size: 12.5px; padding: 7px 14px;
+  border-radius: 20px; cursor: pointer;
+  background: var(--accent-wash); border: 1px solid var(--accent-line); color: var(--accent-strong);
+}
+.ask-option:hover { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.ask-skip { background: var(--surface); border-color: var(--line); color: var(--muted); }
+.ask-remember {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; color: var(--muted); margin-top: 10px; cursor: pointer;
+}
+.ask-remember input { accent-color: var(--accent); }
+.ask-chosen { font-size: 13px; color: var(--ok); font-weight: 600; }
+
+/* ما يتذكره كُنّاش */
+.prefs-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 4px; }
+.pref-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  font-size: 12.5px; padding: 7px 10px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
+}
+.pref-del {
+  background: none; border: none; color: var(--muted);
+  cursor: pointer; font-size: 12px; font-family: inherit; flex: none;
+}
+.pref-del:hover { color: var(--danger); }
+.prefs-empty { font-size: 12px; color: var(--muted); padding: 4px 2px; }
+
 /* منتقي النماذج — قائمة حقيقية بحقل بحث مستقل */
 .model-picker-box {
   display: flex; flex-direction: column; gap: 6px;
@@ -361,7 +428,7 @@ html, body {
   cursor: pointer;
 }
 .pre-copy:hover { color: var(--accent-strong); border-color: var(--accent-soft); }
-.msg-copy.copied, .pre-copy.copied { color: var(--ok); border-color: var(--ok-line); opacity: 1; }
+.msg-copy.copied, .pre-copy.copied, .block-copy.copied { color: var(--ok); border-color: var(--ok-line); opacity: 1; }
 
 .tool-chip {
   display: inline-block;

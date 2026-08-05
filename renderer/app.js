@@ -15,11 +15,46 @@ let connection = null;         // { label, model, ready }
 
 // ---------- أدوات عرض ----------
 function escapeHtml(s) {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
+
+// كان الترميز يسبق التحليل (escapeHtml ثم marked)، فيصير «> نص» إلى
+// «&gt; نص» فلا يراه المحلل اقتباسًا — ولهذا كانت مسودات البريد تظهر بعلامات
+// «>» عارية بدل بطاقة أنيقة. الصواب: نحلّل الماركداون أولًا ثم **ننقّي
+// الشجرة الناتجة** بقائمة سماح، فالتنسيق يعمل والحقن مسدود.
+const ALLOWED_TAGS = new Set([
+  'P', 'BR', 'HR', 'STRONG', 'EM', 'DEL', 'CODE', 'PRE', 'BLOCKQUOTE',
+  'UL', 'OL', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6',
+  'A', 'TABLE', 'THEAD', 'TBODY', 'TR', 'TH', 'TD',
+]);
+const ALLOWED_ATTRS = { A: ['href', 'title'], TD: ['align'], TH: ['align'] };
+
+function sanitizeTree(root) {
+  for (const el of [...root.querySelectorAll('*')]) {
+    if (!ALLOWED_TAGS.has(el.tagName)) {
+      el.replaceWith(...el.childNodes);      // نُبقي النص ونُسقط الوسم
+      continue;
+    }
+    for (const attr of [...el.attributes]) {
+      if (!(ALLOWED_ATTRS[el.tagName] || []).includes(attr.name.toLowerCase())) {
+        el.removeAttribute(attr.name);       // يشمل كل on* وstyle
+      }
+    }
+    const href = el.getAttribute('href');
+    if (href && !/^(https?:|mailto:)/i.test(href.trim())) el.removeAttribute('href');
+  }
+  return root;
+}
+
 function renderMarkdown(text) {
-  try { return marked.parse(escapeHtml(text), { breaks: true }); }
-  catch { return `<p>${escapeHtml(text)}</p>`; }
+  const box = document.createElement('div');
+  try {
+    box.innerHTML = marked.parse(String(text), { breaks: true, gfm: true });
+    sanitizeTree(box);
+  } catch {
+    box.textContent = String(text);
+  }
+  return box.innerHTML;
 }
 // تمرير ذكي: يلتصق بالأسفل تلقائيًا أثناء البث، وإذا صعد المستخدم يدويًا
 // يحترم مكانه — ويعود للالتصاق عند نزوله لقرب الأسفل (نمط تطبيقات المحادثة)
@@ -205,6 +240,8 @@ function copyFeedback(btn, text) {
   });
 }
 
+// كل كتلة يُرجَّح أن يأخذها المستخدم كما هي — شيفرة، أو مسودة رسالة في
+// اقتباس، أو جدول — تحمل زر نسخها الخاص. المسودة تُنسخ بلا علامات الاقتباس.
 function addCopyControls(msgDiv, rawText) {
   if (!msgDiv || msgDiv.querySelector('.msg-copy')) return;
   const btn = document.createElement('button');
@@ -214,15 +251,18 @@ function addCopyControls(msgDiv, rawText) {
   btn.onclick = () => copyFeedback(btn, rawText);
   msgDiv.appendChild(btn);
 
-  msgDiv.querySelectorAll('pre').forEach((pre) => {
-    if (pre.querySelector('.pre-copy')) return;
-    const content = pre.innerText;
-    const pb = document.createElement('button');
-    pb.className = 'pre-copy';
-    pb.textContent = '⧉ نسخ';
-    pb.onclick = (e) => { e.stopPropagation(); copyFeedback(pb, content); };
-    pre.appendChild(pb);
-  });
+  for (const block of msgDiv.querySelectorAll('pre, blockquote, table')) {
+    if (block.querySelector('.block-copy')) continue;
+    const content = block.innerText.trim();
+    if (!content) continue;
+    block.classList.add('copyable');
+    const b = document.createElement('button');
+    b.className = 'block-copy';
+    b.textContent = '⧉ نسخ';
+    b.title = block.tagName === 'BLOCKQUOTE' ? 'نسخ المسودة وحدها' : 'نسخ هذه الكتلة';
+    b.onclick = (e) => { e.stopPropagation(); copyFeedback(b, content); };
+    block.appendChild(b);
+  }
 }
 
 function addError(message, retryPayload) {
@@ -467,6 +507,66 @@ window.kunnash.onPermissionRequest((req) => {
 $('#perm-allow').onclick = () => respondPermission('allow');
 $('#perm-always').onclick = () => respondPermission('always');
 $('#perm-deny').onclick = () => respondPermission('deny');
+
+// ---------- سؤال النموذج للمستخدم ----------
+// بطاقة داخل المحادثة لا مربع حاجب: السؤال جزء من سياق الكلام، والتشغيل
+// موقوف حتى يُجاب. وخيار «احفظه دائمًا» هو ما تُبنى به ذاكرة كُنّاش عن صاحبه.
+window.kunnash.onAskRequest((req) => {
+  soundAttention();
+  hideEmpty();
+
+  const card = document.createElement('div');
+  card.className = 'ask-card';
+
+  const q = document.createElement('div');
+  q.className = 'ask-question';
+  q.textContent = req.question;
+  card.appendChild(q);
+
+  let remember = false;
+  let rememberRow = null;
+  if (req.rememberKey) {
+    rememberRow = document.createElement('label');
+    rememberRow.className = 'ask-remember';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.onchange = () => { remember = cb.checked; };
+    const txt = document.createElement('span');
+    txt.textContent = `احفظ اختياري لـ«${req.rememberKey}» فلا تسألني مرة أخرى`;
+    rememberRow.appendChild(cb);
+    rememberRow.appendChild(txt);
+  }
+
+  const opts = document.createElement('div');
+  opts.className = 'ask-options';
+  const answer = (value) => {
+    window.kunnash.respondAsk(req.id, value, remember);
+    card.classList.add('answered');
+    opts.innerHTML = '';
+    if (rememberRow) rememberRow.remove();
+    const chosen = document.createElement('div');
+    chosen.className = 'ask-chosen';
+    chosen.textContent = value ? `✓ ${value}${remember ? ' · محفوظ' : ''}` : '✕ بلا اختيار';
+    card.appendChild(chosen);
+  };
+  for (const o of req.options) {
+    const b = document.createElement('button');
+    b.className = 'ask-option';
+    b.textContent = o;
+    b.onclick = () => answer(o);
+    opts.appendChild(b);
+  }
+  const skip = document.createElement('button');
+  skip.className = 'ask-skip';
+  skip.textContent = 'اختر أنت';
+  skip.onclick = () => answer(null);
+  opts.appendChild(skip);
+
+  card.appendChild(opts);
+  if (rememberRow) card.appendChild(rememberRow);
+  messagesEl.appendChild(card);
+  scrollDown(true);
+});
 
 // ---------- المرفقات ----------
 const attachListEl = $('#attach-list');
@@ -946,8 +1046,36 @@ async function refreshCredits() {
   creditsLineEl.textContent = '💳 ' + parts.join(' · ');
 }
 
+// ذاكرة ظاهرة تُحذف بنقرة — وإلا صارت مقلقة بدل أن تكون خدمة
+async function renderPrefs() {
+  const box = $('#prefs-list');
+  const items = await window.kunnash.listPrefs();
+  box.innerHTML = '';
+  if (!items.length) {
+    box.innerHTML = '<div class="prefs-empty">لا شيء بعد — حين يسألك كُنّاش ويعرض «احفظ اختياري» يظهر هنا.</div>';
+    return;
+  }
+  for (const it of items) {
+    const row = document.createElement('div');
+    row.className = 'pref-row';
+    const txt = document.createElement('span');
+    txt.innerHTML = '<b></b>: <span></span>';
+    txt.querySelector('b').textContent = it.key;
+    txt.querySelector('span').textContent = it.value;
+    const del = document.createElement('button');
+    del.className = 'pref-del';
+    del.textContent = '✕';
+    del.title = 'انسَ هذا';
+    del.onclick = async () => { await window.kunnash.forgetPref(it.key); renderPrefs(); };
+    row.appendChild(txt);
+    row.appendChild(del);
+    box.appendChild(row);
+  }
+}
+
 async function openSettings() {
   await renderPresets();
+  renderPrefs();
   const prof = await window.kunnash.getProfile();
   $('#profile-name').value = prof.name || '';
 

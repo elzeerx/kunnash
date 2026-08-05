@@ -12,6 +12,8 @@ contextBridge.exposeInMainWorld('kunnash', {
   getPresets: () => ipcRenderer.invoke('connection:presets'),
   getProfile: () => ipcRenderer.invoke('profile:get'),
   saveProfile: (patch) => ipcRenderer.invoke('profile:save', patch),
+  listPrefs: () => ipcRenderer.invoke('prefs:list'),
+  forgetPref: (key) => ipcRenderer.invoke('prefs:forget', key),
   linkOpenRouter: () => ipcRenderer.invoke('connection:link'),
   listModels: () => ipcRenderer.invoke('connection:models'),
   getCredits: () => ipcRenderer.invoke('connection:credits'),
@@ -40,6 +42,10 @@ contextBridge.exposeInMainWorld('kunnash', {
   // الأذونات
   onPermissionRequest: (cb) => ipcRenderer.on('permission:request', (_e, payload) => cb(payload)),
   respondPermission: (id, decision) => ipcRenderer.send('permission:respond', { id, decision }),
+
+  // سؤال المستخدم بخيارات
+  onAskRequest: (cb) => ipcRenderer.on('ask:request', (_e, payload) => cb(payload)),
+  respondAsk: (id, answer, remember) => ipcRenderer.send('ask:respond', { id, answer, remember }),
 
   // التنبيهات
   notify: (payload) => ipcRenderer.send('notify:show', payload),

@@ -10,6 +10,7 @@ const ws = require('./lib/workspace');
 const { linkOpenRouter } = require('./lib/oauth');
 const { resolveInWorkspace, forgetRoot } = require('./lib/paths');
 const { listLibrary, readItem, saveItem, deleteItem, templateFor } = require('./lib/library');
+const prefs = require('./lib/preferences');
 
 const APP_NAME = 'كُنّاش';
 
@@ -101,9 +102,16 @@ ipcMain.handle('connection:get', () => {
   };
 });
 
-// ---------- IPC: الملف الشخصي ----------
+// ---------- IPC: الملف الشخصي والتفضيلات ----------
 ipcMain.handle('profile:get', () => core.loadProfile());
 ipcMain.handle('profile:save', (_e, patch) => core.saveProfile(patch));
+
+// الذاكرة تُرى وتُمحى: ما لا يستطيع المستخدم رؤيته وحذفه يقلقه لا يخدمه
+ipcMain.handle('prefs:list', () => {
+  const root = ws.getWorkspace();
+  return root ? prefs.load(root) : [];
+});
+ipcMain.handle('prefs:forget', (_e, key) => prefs.forget(requireRoot(), key));
 ipcMain.handle('connection:presets', () => core.PRESETS);
 
 // الربط بضغطة — المفتاح الناتج يُحفظ هنا مباشرة ولا يمر بالواجهة إطلاقًا.
@@ -239,9 +247,29 @@ function askPermission(request) {
 
 ipcMain.on('chat:cancel', (_e, { requestId } = {}) => core.cancelChat(requestId));
 
+// سؤال المستخدم بخيارات — نفس نمط طابور الإذن: معلّق حتى يردّ
+const pendingAsks = new Map();
+
+ipcMain.on('ask:respond', (_e, { id, answer, remember }) => {
+  const resolve = pendingAsks.get(id);
+  if (resolve) {
+    pendingAsks.delete(id);
+    resolve({ answer: answer ?? null, remember: Boolean(remember) });
+  }
+});
+
+function askUser(request) {
+  return new Promise((resolve) => {
+    if (!win || win.isDestroyed()) { resolve({ answer: null, remember: false }); return; }
+    const id = 'q' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    pendingAsks.set(id, resolve);
+    win.webContents.send('ask:request', { id, ...request });
+  });
+}
+
 ipcMain.handle('chat:send', async (_e, params) => {
   const emit = (channel, payload) => {
     if (win && !win.isDestroyed()) win.webContents.send(channel, payload);
   };
-  return core.chatSend(params, emit, askPermission);
+  return core.chatSend(params, emit, askPermission, askUser);
 });
