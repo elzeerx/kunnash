@@ -14,6 +14,8 @@ contextBridge.exposeInMainWorld('kunnash', {
   saveProfile: (patch) => ipcRenderer.invoke('profile:save', patch),
   listPrefs: () => ipcRenderer.invoke('prefs:list'),
   forgetPref: (key) => ipcRenderer.invoke('prefs:forget', key),
+  listRules: () => ipcRenderer.invoke('rules:list'),
+  revokeRule: (tool, scope) => ipcRenderer.invoke('rules:revoke', { tool, scope }),
   linkOpenRouter: () => ipcRenderer.invoke('connection:link'),
   listModels: () => ipcRenderer.invoke('connection:models'),
   getCredits: () => ipcRenderer.invoke('connection:credits'),
@@ -34,7 +36,7 @@ contextBridge.exposeInMainWorld('kunnash', {
   sendMessage: (payload) => ipcRenderer.invoke('chat:send', payload),
   cancelChat: (requestId) => ipcRenderer.send('chat:cancel', { requestId }),
   onChatEvent: (channel, cb) => {
-    const valid = ['chat:started', 'chat:delta', 'chat:tool', 'chat:done', 'chat:error'];
+    const valid = ['chat:started', 'chat:delta', 'chat:tool', 'chat:skill', 'chat:done', 'chat:error'];
     if (!valid.includes(channel)) return;
     ipcRenderer.on(channel, (_e, payload) => cb(payload));
   },

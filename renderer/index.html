@@ -105,6 +105,10 @@
       <p class="modal-note">لا يُحفظ شيء إلا باختيارك الصريح، وكل بند هنا يُحذف بنقرة.</p>
       <div id="prefs-list" class="prefs-list"></div>
 
+      <h4 class="section-title">الأذونات الدائمة</h4>
+      <p class="modal-note">ما سمحتَ به «دائمًا» — كل قاعدة محصورة في نطاق الطلب الذي ولّدها، وتُسحب بنقرة.</p>
+      <div id="rules-list" class="prefs-list"></div>
+
       <h4 class="section-title">الاتصال بالنموذج</h4>
       <p class="modal-note">اختر خدمة جاهزة أو اكتب أي خدمة تتكلم لغة OpenAI.
       المفتاح يُحفظ مشفَّرًا على جهازك، ولكل خدمة مفتاحها ونموذجها.</p>
@@ -206,9 +210,10 @@
       </div>
       <p id="perm-summary" class="perm-summary"></p>
       <pre id="perm-details" class="perm-details"></pre>
+      <p id="perm-scope" class="perm-scope"></p>
       <div class="perm-actions">
         <button id="perm-allow" class="btn-primary">السماح مرة واحدة</button>
-        <button id="perm-always" class="btn-ghost-dark">السماح دائمًا لهذه الأداة</button>
+        <button id="perm-always" class="btn-ghost-dark">السماح دائمًا</button>
         <button id="perm-deny" class="btn-danger">رفض</button>
       </div>
     </div>

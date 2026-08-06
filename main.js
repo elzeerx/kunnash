@@ -112,6 +112,8 @@ ipcMain.handle('prefs:list', () => {
   return root ? prefs.load(root) : [];
 });
 ipcMain.handle('prefs:forget', (_e, key) => prefs.forget(requireRoot(), key));
+ipcMain.handle('rules:list', () => core.listRules());
+ipcMain.handle('rules:revoke', (_e, { tool, scope }) => core.revokeRule(tool, scope));
 ipcMain.handle('connection:presets', () => core.PRESETS);
 
 // الربط بضغطة — المفتاح الناتج يُحفظ هنا مباشرة ولا يمر بالواجهة إطلاقًا.

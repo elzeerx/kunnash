@@ -481,6 +481,15 @@ function showNextPermission() {
     }
   } catch { /* تجاهل */ }
   permDetailsEl.textContent = details.trim();
+  // ما ستحفظه «دائمًا» بالضبط — فلا يوقّع المستخدم على بياض
+  const scopeEl = $('#perm-scope');
+  if (req.alwaysScope) {
+    scopeEl.textContent = `«السماح دائمًا» يحفظ قاعدة: ${req.alwaysScope}`;
+    scopeEl.classList.remove('hidden');
+  } else {
+    scopeEl.textContent = '«السماح دائمًا» لهذا التشغيل وحده';
+    scopeEl.classList.remove('hidden');
+  }
   permModal.classList.remove('hidden');
 }
 
@@ -734,21 +743,14 @@ async function sendMessage() {
 async function sendText(text) {
   if (!text || runForCurrentView()) return;
 
-  // تفعيل يدوي لمهارة أو عميل: يُقرأ نص الملف ويُضمَّن في الرسالة — النموذج
-  // في هذه المرحلة لا يقرأ الملفات بنفسه، فطلبٌ باسم المهارة وحده مستحيل.
-  // م٤ يستبدل هذا التضمين بحقن رسالة نظام حقيقي قبل أول طلب.
+  // التفعيل اليدوي: المهارة تُحقن رسالةَ نظام في المحرك (م٤) لا تُضمَّن في
+  // نص المستخدم — فتبقى خارج النص المحفوظ ولا تتضخم المحادثة بتكرارها.
   const act = activationEl.value;
+  let skillId = null;
   if (act) {
     const [kind, id] = act.split('|');
-    try {
-      const body = await window.kunnash.libraryRead(kind, id);
-      text = (kind === 'skill'
-        ? 'اتبع هذه المهارة حرفيًا في تنفيذ الطلب:\n\n' + body
-        : 'اعمل بدور هذا العميل والتزم قواعده:\n\n' + body)
-        + '\n\n---\nالطلب:\n' + text;
-    } catch {
-      addError('تعذّرت قراءة «' + id + '» — أُرسل الطلب بدونها.');
-    }
+    if (kind === 'skill') skillId = id;
+    else text = 'كلّف العميل الجانبي «' + id + '» بالطلب التالي وقدّم لي نتيجته:\n\n' + text;
   }
 
   const attachments = pendingFiles.map((f) => f.path);
@@ -756,7 +758,7 @@ async function sendText(text) {
   pendingFiles = [];
   renderAttachList();
 
-  await dispatch({ text, attachments });
+  await dispatch({ text, attachments, skillId });
 }
 
 // ---------- تشغيل عدة محادثات في وقت واحد ----------
@@ -872,6 +874,18 @@ window.kunnash.onChatEvent('chat:delta', ({ requestId, chunk }) => {
   run.text += chunk;
   // أثناء البث نعرض نصًا خامًا للسرعة، وعند الاكتمال نعيد العرض كماركداون
   if (run.els) { run.els.bubble.textContent = run.text; scrollDown(); }
+});
+
+// المهارة حين تُحقن حتميًا: يُعلَن ذلك — الحقن الصامت يخفي عن المستخدم
+// لماذا تغيّر سلوك التطبيق
+window.kunnash.onChatEvent('chat:skill', ({ requestId, id }) => {
+  const run = runs.get(requestId);
+  if (!run || !run.els) return;
+  const chip = document.createElement('span');
+  chip.className = 'tool-chip skill-chip';
+  chip.textContent = '⚡ فُعّلت المهارة: ' + id;
+  run.els.tools.appendChild(chip);
+  scrollDown();
 });
 
 window.kunnash.onChatEvent('chat:tool', ({ requestId, name, input }) => {
@@ -1073,9 +1087,40 @@ async function renderPrefs() {
   }
 }
 
+async function renderRules() {
+  const box = $('#rules-list');
+  const rules = await window.kunnash.listRules();
+  box.innerHTML = '';
+  if (!rules.length) {
+    box.innerHTML = '<div class="prefs-empty">لا قواعد — كل إجراء مؤثّر يسألك.</div>';
+    return;
+  }
+  for (const r of rules) {
+    const row = document.createElement('div');
+    row.className = 'pref-row';
+    const txt = document.createElement('span');
+    txt.innerHTML = '<b></b> <span dir="ltr"></span><i></i>';
+    txt.querySelector('b').textContent = r.tool;
+    txt.querySelector('span').textContent = r.scope;
+    if (r.expiresAt) {
+      const days = Math.max(0, Math.ceil((r.expiresAt - Date.now()) / 86400000));
+      txt.querySelector('i').textContent = ` — تنتهي بعد ${days} يومًا`;
+    }
+    const del = document.createElement('button');
+    del.className = 'pref-del';
+    del.textContent = '✕';
+    del.title = 'اسحب هذا الإذن';
+    del.onclick = async () => { await window.kunnash.revokeRule(r.tool, r.scope); renderRules(); };
+    row.appendChild(txt);
+    row.appendChild(del);
+    box.appendChild(row);
+  }
+}
+
 async function openSettings() {
   await renderPresets();
   renderPrefs();
+  renderRules();
   const prof = await window.kunnash.getProfile();
   $('#profile-name').value = prof.name || '';
 

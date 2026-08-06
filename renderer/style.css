@@ -277,6 +277,12 @@ html, body {
   cursor: pointer; font-size: 12px; font-family: inherit; flex: none;
 }
 .pref-del:hover { color: var(--danger); }
+.perm-scope {
+  font-size: 12px; color: var(--muted); margin: 8px 0 12px;
+  padding: 7px 10px; background: var(--code-bg); border-radius: 8px;
+}
+.skill-chip { background: var(--accent-wash) !important; border-color: var(--accent-line) !important; color: var(--accent-strong) !important; }
+.pref-row i { color: var(--muted); font-style: normal; font-size: 11px; }
 .prefs-empty { font-size: 12px; color: var(--muted); padding: 4px 2px; }
 
 /* منتقي النماذج — قائمة حقيقية بحقل بحث مستقل */
