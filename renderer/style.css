@@ -241,6 +241,57 @@ html, body {
 .msg .bubble li { margin: 3px 0; }
 .msg .bubble hr { border: none; border-top: 1px solid var(--line); margin: 14px 0; }
 
+/* أول تشغيل */
+.ob-steps { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; margin-bottom: 20px; }
+.ob-step {
+  font-size: 11.5px; padding: 4px 12px; border-radius: 20px;
+  border: 1px solid var(--line); color: var(--muted); background: var(--surface);
+}
+.ob-step.active { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 600; }
+.ob-step.done { background: var(--ok-wash); border-color: var(--ok-line); color: var(--ok); }
+.ob-body { margin-bottom: 20px; }
+.ob-input {
+  font-family: inherit; font-size: 15px; text-align: center;
+  padding: 11px 16px; width: min(320px, 80%);
+  border: 1px solid var(--line); border-radius: 10px;
+  background: var(--surface); color: var(--ink);
+}
+.ob-input:focus { outline: none; border-color: var(--accent-soft); }
+.ob-ok { font-size: 13.5px; color: var(--ok); font-weight: 600; margin-bottom: 10px; }
+.ob-pick { font-size: 14px; padding: 10px 20px; }
+.ob-actions { display: flex; justify-content: center; align-items: center; gap: 10px; }
+.ob-actions .btn-primary:disabled { opacity: .4; cursor: not-allowed; }
+.ob-packs { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; text-align: start; }
+.ob-pack {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+  padding: 12px 14px; cursor: pointer; font-family: inherit; text-align: start;
+}
+.ob-pack:hover { border-color: var(--accent-soft); }
+.ob-pack.installed { background: var(--ok-wash); border-color: var(--ok-line); }
+.ob-pack strong { display: block; font-size: 13.5px; margin-bottom: 4px; }
+.ob-pack span { display: block; font-size: 11.5px; color: var(--muted); line-height: 1.7; }
+.ob-pack i { display: block; font-size: 11px; color: var(--accent-strong); font-style: normal; margin-top: 6px; }
+
+/* قائمة مساحات العمل */
+.ws-menu {
+  position: fixed; inset-inline-end: 300px; inset-block-end: 70px; z-index: 60;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+  box-shadow: 0 8px 32px var(--overlay); padding: 6px; min-width: 280px; max-width: 420px;
+}
+.ws-item {
+  display: block; width: 100%; text-align: start; background: none; border: none;
+  border-radius: 8px; padding: 8px 10px; cursor: pointer; font-family: inherit; color: var(--ink);
+}
+.ws-item:hover { background: var(--accent-wash); }
+.ws-item strong { display: block; font-size: 13px; }
+.ws-item span {
+  display: block; font-size: 10.5px; color: var(--muted); direction: ltr; text-align: start;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ws-item.current { background: var(--accent-wash); }
+.ws-item.missing { opacity: .5; }
+.ws-add { font-size: 13px; color: var(--accent-strong); border-top: 1px solid var(--line); margin-top: 4px; padding-top: 10px; }
+
 /* بطاقة سؤال النموذج داخل المحادثة */
 .ask-card {
   max-width: 860px; margin: 0 auto;

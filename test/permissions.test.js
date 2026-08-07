@@ -136,6 +136,34 @@ describe('المحفّز الحتمي للمهارات', () => {
     assert.ok(skills.matchSkill(sroot, 'راجع فواتير المورّدين اليوم'));
   });
 
+  // المطابقة متتالية بفجوة محدودة: الحشو الطبيعي يمرّ والتباعد لا يمرّ
+  test('الحشو الطبيعي بين كلمات العبارة يمرّ', () => {
+    assert.ok(skills.matchSkill(sroot, 'سوّ لي من فضلك ملخص هذا الأسبوع'),
+      'كلمة واحدة بين «ملخص» و«الأسبوع» أسقطت المطابقة');
+    assert.ok(skills.matchSkill(sroot, 'من فضلك راجع فواتير كل الموردين اليوم'));
+  });
+
+  test('التباعد البعيد لا يمرّ — لا مطابقة بالصدفة', () => {
+    assert.strictEqual(
+      skills.matchSkill(sroot, 'أريد ملخص المشروع ثم بعد ذلك خطة الشهر ثم إجازة الأسبوع'),
+      null,
+      'طابقت كلمتين متباعدتين بالصدفة',
+    );
+  });
+
+  test('الترتيب شرط — الكلمات معكوسة لا تطابق', () => {
+    assert.strictEqual(skills.matchSkill(sroot, 'الأسبوع ملخص'), null);
+  });
+
+  test('matchesTrigger وحدها: الحدود بالضبط', () => {
+    const t = ['اكتب', 'ردا'];
+    assert.ok(skills.matchesTrigger(['اكتب', 'ردا'], t));                    // متلاصقتان
+    assert.ok(skills.matchesTrigger(['اكتب', 'لي', 'ردا'], t));              // فجوة ١
+    assert.ok(skills.matchesTrigger(['اكتب', 'لي', 'الآن', 'ردا'], t));      // فجوة ٢
+    assert.ok(!skills.matchesTrigger(['اكتب', 'أ', 'ب', 'ج', 'ردا'], t));    // فجوة ٣
+    assert.ok(!skills.matchesTrigger(['ردا', 'اكتب'], t));                   // معكوسة
+  });
+
   test('بلا تطابق: لا حقن', () => {
     assert.strictEqual(skills.matchSkill(sroot, 'كم الساعة الآن؟'), null);
   });

@@ -34,11 +34,16 @@
     <main class="main">
       <div id="chat" class="chat">
 
-        <!-- بلا مساحة عمل: هذه الشاشة وحدها تظهر -->
-        <div id="no-workspace" class="empty-state hidden">
-          <h2>حيّاك الله</h2>
-          <p class="ws-lede">كُنّاش يشتغل على مجلد تختاره أنت — ملفاتك تبقى مكانها، وهو يقرأ منها ويكتب فيها.</p>
-          <button id="btn-choose-workspace" class="btn-primary btn-lg">اختر مجلد العمل</button>
+        <!-- أول تشغيل: أربع خطوات من التثبيت إلى أول مخرَج -->
+        <div id="onboarding" class="empty-state hidden">
+          <h2 id="ob-title">حيّاك الله في كُنّاش</h2>
+          <p id="ob-lede" class="ws-lede"></p>
+          <div id="ob-steps" class="ob-steps"></div>
+          <div id="ob-body" class="ob-body"></div>
+          <div class="ob-actions">
+            <button id="ob-next" class="btn-primary btn-lg">التالي</button>
+            <button id="ob-skip" class="btn-ghost-dark">تخطَّ هذه الخطوة</button>
+          </div>
         </div>
 
         <!-- لوحة البداية -->

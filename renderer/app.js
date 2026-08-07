@@ -75,15 +75,18 @@ function showEmpty() { emptyEl.style.display = ''; messagesEl.innerHTML = ''; }
 // ---------- مساحة العمل ----------
 // بلا مجلد عمل يفتح التطبيق على شاشة الاختيار وحدها: لا محادثة ولا مكتبة ولا
 // لوحة بداية — الحالة الفارغة سلوك مقصود لا عطل.
-const noWorkspaceEl = $('#no-workspace');
+const noWorkspaceEl = $('#onboarding');
 const composerWrapEl = document.querySelector('.composer-wrap');
+
+let onboarding = false;
 
 function applyWorkspace(info) {
   workspace = info || null;
   const has = Boolean(workspace);
-  noWorkspaceEl.classList.toggle('hidden', has);
-  composerWrapEl.classList.toggle('hidden', !has);
-  emptyEl.classList.toggle('hidden', !has);
+  const showChat = has && !onboarding;
+  noWorkspaceEl.classList.toggle('hidden', showChat);
+  composerWrapEl.classList.toggle('hidden', !showChat);
+  emptyEl.classList.toggle('hidden', !showChat);
   $('#btn-library').disabled = !has;
   $('#btn-folder').disabled = !has;
   $('#workspace-name').textContent = has ? workspace.name : 'مجلد العمل';
@@ -111,17 +114,149 @@ function applyGreeting(name) {
   $('#greeting').textContent = name ? `حيّاك الله يا ${name}` : 'حيّاك الله';
 }
 
-async function chooseWorkspace() {
-  const info = await window.kunnash.chooseWorkspace();
-  if (!info) return;
+async function afterWorkspaceChange(info) {
   applyWorkspace(info);
   currentSessionId = null;
   showEmpty();
   await renderHome();
   refreshSessions();
   populateActivation();
-  inputEl.focus();
+  if (info) inputEl.focus();
 }
+
+// ---------- أول تشغيل ----------
+// أربع خطوات لا شاشة واحدة: الاسم، فالمجلد، فالاتصال، فحزمة مهارات جاهزة —
+// ثم أول طلب مقترح. الهدف المقاس: من تثبيت نظيف إلى أول مخرَج حقيقي في أقل
+// من خمس دقائق، فكل خطوة تُتخطّى إلا التي لا يعمل التطبيق بدونها.
+const OB_STEPS = [
+  { id: 'name', label: 'اسمك', skippable: true },
+  { id: 'workspace', label: 'مجلد العمل', skippable: false },
+  { id: 'connection', label: 'النموذج', skippable: false },
+  { id: 'pack', label: 'مهاراتك', skippable: true },
+];
+let obIndex = 0;
+
+function renderObSteps() {
+  const box = $('#ob-steps');
+  box.innerHTML = '';
+  OB_STEPS.forEach((s, i) => {
+    const el = document.createElement('span');
+    el.className = 'ob-step' + (i === obIndex ? ' active' : (i < obIndex ? ' done' : ''));
+    el.textContent = `${i + 1}. ${s.label}`;
+    box.appendChild(el);
+  });
+}
+
+async function renderOnboarding() {
+  const step = OB_STEPS[obIndex];
+  const body = $('#ob-body');
+  const next = $('#ob-next');
+  const skip = $('#ob-skip');
+  body.innerHTML = '';
+  renderObSteps();
+  skip.classList.toggle('hidden', !step.skippable);
+  next.classList.remove('hidden');
+
+  if (step.id === 'name') {
+    $('#ob-lede').textContent = 'بمَ تحب أن يناديك؟ (يظهر في الترحيب فقط، ويبقى على جهازك)';
+    const input = document.createElement('input');
+    input.className = 'ob-input';
+    input.placeholder = 'مثال: نوّاف';
+    input.value = (await window.kunnash.getProfile()).name || '';
+    input.onkeydown = (e) => { if (e.key === 'Enter') next.click(); };
+    body.appendChild(input);
+    next.textContent = 'التالي';
+    next.onclick = async () => {
+      await window.kunnash.saveProfile({ name: input.value.trim() });
+      applyGreeting(input.value.trim());
+      obIndex++; renderOnboarding();
+    };
+    setTimeout(() => input.focus(), 50);
+    return;
+  }
+
+  if (step.id === 'workspace') {
+    $('#ob-lede').textContent = 'كُنّاش يشتغل على مجلد تختاره أنت — ملفاتك تبقى مكانها، وهو يقرأ منها ويكتب فيها.';
+    const current = await window.kunnash.getWorkspace();
+    if (current) {
+      const ok = document.createElement('div');
+      ok.className = 'ob-ok';
+      ok.textContent = `✓ ${current.name}`;
+      body.appendChild(ok);
+    }
+    const pick = document.createElement('button');
+    pick.className = 'btn-ghost-dark ob-pick';
+    pick.textContent = current ? 'اختر مجلدًا آخر' : '📁 اختر مجلد العمل';
+    pick.onclick = async () => {
+      const info = await window.kunnash.chooseWorkspace();
+      if (info) { await afterWorkspaceChange(info); renderOnboarding(); }
+    };
+    body.appendChild(pick);
+    next.textContent = 'التالي';
+    next.disabled = !current;
+    next.onclick = () => { obIndex++; renderOnboarding(); };
+    return;
+  }
+
+  if (step.id === 'connection') {
+    $('#ob-lede').textContent = 'اربط النموذج الذي تريد — بضغطة عبر OpenRouter، أو بمفتاح خدمة تملكها.';
+    const c = await window.kunnash.getConnection();
+    const ready = Boolean(c.model && c.hasKey);
+    if (ready) {
+      const ok = document.createElement('div');
+      ok.className = 'ob-ok';
+      ok.textContent = `✓ ${c.label} · ${c.model}`;
+      body.appendChild(ok);
+    }
+    const open = document.createElement('button');
+    open.className = 'btn-ghost-dark ob-pick';
+    open.textContent = ready ? 'تعديل الاتصال' : '⚙️ افتح الإعدادات واربط';
+    open.onclick = async () => { await openSettings(); };
+    body.appendChild(open);
+    next.textContent = 'التالي';
+    next.disabled = !ready;
+    next.onclick = () => { obIndex++; renderOnboarding(); };
+    return;
+  }
+
+  // حزم المهن
+  $('#ob-lede').textContent = 'ابدأ بمهارات جاهزة بدل صفحة فارغة — تُنسخ إلى مجلدك فتصير ملكك، تعدّلها وتحذفها كما تشاء.';
+  const packs = await window.kunnash.listPacks();
+  const list = document.createElement('div');
+  list.className = 'ob-packs';
+  for (const p of packs) {
+    const card = document.createElement('button');
+    card.className = 'ob-pack';
+    card.innerHTML = '<strong></strong><span></span><i></i>';
+    card.querySelector('strong').textContent = p.label;
+    card.querySelector('span').textContent = p.description;
+    card.querySelector('i').textContent = `${p.skills.length} مهارات`;
+    card.onclick = async () => {
+      const res = await window.kunnash.installPack(p.id);
+      card.classList.add('installed');
+      card.querySelector('i').textContent = res.installed.length
+        ? `✓ ثُبّتت ${res.installed.length} مهارات`
+        : '✓ مثبّتة سلفًا';
+      await renderHome();
+      populateActivation();
+    };
+    list.appendChild(card);
+  }
+  body.appendChild(list);
+  next.textContent = 'ابدأ العمل';
+  next.disabled = false;
+  next.onclick = async () => {
+    await window.kunnash.saveProfile({ onboarded: 'true' });
+    // العلم أولًا: applyWorkspace (يستدعيه renderHome) يقرأ onboarding ليقرر
+    // ماذا يُظهر — فلو بقي مرفوعًا أعاد إخفاء المحادثة فور إظهارها.
+    onboarding = false;
+    applyWorkspace(await window.kunnash.getWorkspace());
+    await renderHome();
+    inputEl.focus();
+  };
+}
+
+$('#ob-skip').onclick = () => { obIndex++; renderOnboarding(); };
 
 function addUserMsg(text, attachNames) {
   hideEmpty();
@@ -1117,6 +1252,13 @@ async function renderRules() {
   }
 }
 
+// كل إغلاق للإعدادات يمرّ من هنا: أثناء أول تشغيل تُعاد الخطوة الحالية
+// لتلتقط ما تغيّر — بدونها يربط المستخدم النموذج ويبقى «التالي» معطّلًا.
+function closeSettings() {
+  settingsModal.classList.add('hidden');
+  if (onboarding) renderOnboarding();
+}
+
 async function openSettings() {
   await renderPresets();
   renderPrefs();
@@ -1166,7 +1308,7 @@ async function saveSettings(keepOpen) {
     ready: Boolean(c.model && (c.hasKey || isLocalServiceUrl(c.baseUrl))),
   });
   applyGreeting((await window.kunnash.getProfile()).name);
-  if (keepOpen !== true) settingsModal.classList.add('hidden');
+  if (keepOpen !== true) closeSettings();
 }
 
 async function testConnection() {
@@ -1312,7 +1454,51 @@ function autoGrow() {
 inputEl.addEventListener('input', autoGrow);
 
 $('#btn-new').onclick = newChat;
-$('#btn-folder').onclick = () => window.kunnash.openFolder();
+// زر المجلد: نقرة تفتحه، ونقر بديل (Alt أو يمين) يعرض قائمة المساحات
+$('#btn-folder').onclick = (e) => {
+  if (e.altKey) showWorkspaceMenu();
+  else window.kunnash.openFolder();
+};
+$('#btn-folder').oncontextmenu = (e) => { e.preventDefault(); showWorkspaceMenu(); };
+
+// تبديل مساحة العمل — للمستخدم سياقات متعددة (عمل، شخصي، مشروع) ولكلٍّ
+// مهاراتها وأذوناتها وتفضيلاتها، فالتنقل بينها نقرة لا إعادة اختيار مجلد.
+async function showWorkspaceMenu() {
+  const old = document.getElementById('ws-menu');
+  if (old) { old.remove(); return; }
+  const list = await window.kunnash.listWorkspaces();
+
+  const menu = document.createElement('div');
+  menu.id = 'ws-menu';
+  menu.className = 'ws-menu';
+  for (const w of list) {
+    const row = document.createElement('button');
+    row.className = 'ws-item' + (w.current ? ' current' : '') + (w.missing ? ' missing' : '');
+    row.innerHTML = '<strong></strong><span></span>';
+    row.querySelector('strong').textContent = (w.current ? '● ' : '') + w.name;
+    row.querySelector('span').textContent = w.missing ? 'غير موجود على القرص' : w.path;
+    row.onclick = async () => {
+      menu.remove();
+      if (w.current || w.missing) return;
+      await afterWorkspaceChange(await window.kunnash.switchWorkspace(w.path));
+    };
+    menu.appendChild(row);
+  }
+  const add = document.createElement('button');
+  add.className = 'ws-item ws-add';
+  add.textContent = '＋ افتح مجلدًا آخر';
+  add.onclick = async () => {
+    menu.remove();
+    const info = await window.kunnash.chooseWorkspace();
+    if (info) await afterWorkspaceChange(info);
+  };
+  menu.appendChild(add);
+  document.body.appendChild(menu);
+  setTimeout(() => document.addEventListener('click', function once() {
+    menu.remove();
+    document.removeEventListener('click', once);
+  }, { once: true }), 0);
+}
 $('#btn-library').onclick = () => { refreshLibrary(); closeLibEditor(); libraryModal.classList.remove('hidden'); };
 $('#btn-close-library').onclick = () => libraryModal.classList.add('hidden');
 libraryModal.addEventListener('click', (e) => { if (e.target === libraryModal) libraryModal.classList.add('hidden'); });
@@ -1320,7 +1506,7 @@ document.querySelectorAll('.lib-new').forEach((b) => { b.onclick = () => newLibI
 $('#lib-save').onclick = saveLibItem;
 $('#lib-delete').onclick = deleteLibItem;
 $('#btn-settings').onclick = openSettings;
-$('#btn-close-settings').onclick = () => settingsModal.classList.add('hidden');
+$('#btn-close-settings').onclick = closeSettings;
 $('#btn-save-settings').onclick = saveSettings;
 $('#btn-test-conn').onclick = testConnection;
 $('#btn-link-or').onclick = linkOpenRouterFlow;
@@ -1331,9 +1517,8 @@ modelListEl.addEventListener('change', () => {
   if (modelListEl.value) $('#conn-model').value = modelListEl.value;
 });
 modelChipEl.onclick = openSettings;
-settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal) settingsModal.classList.add('hidden'); });
+settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal) closeSettings(); });
 
-$('#btn-choose-workspace').onclick = chooseWorkspace;
 
 activationEl.addEventListener('change', () => {
   activationEl.classList.toggle('armed', Boolean(activationEl.value));
@@ -1341,11 +1526,19 @@ activationEl.addEventListener('change', () => {
 
 // البداية
 (async () => {
-  applyGreeting((await window.kunnash.getProfile()).name);
-  applyWorkspace(await window.kunnash.getWorkspace());
+  const prof = await window.kunnash.getProfile();
+  applyGreeting(prof.name);
+  const wsInfo = await window.kunnash.getWorkspace();
+  // أول تشغيل: بلا مساحة عمل، أو لم يُكمل الجولة التعريفية بعد
+  onboarding = !wsInfo || !prof.onboarded;
+  applyWorkspace(wsInfo);
+  if (onboarding) {
+    obIndex = prof.name ? (wsInfo ? 2 : 1) : 0;   // نبدأ من أول خطوة ناقصة
+    renderOnboarding();
+  }
   refreshSessions();
   renderHome();
   populateActivation();
   updateSendState();
-  if (workspace) inputEl.focus();
+  if (!onboarding && workspace) inputEl.focus();
 })();

@@ -67,6 +67,17 @@ ipcMain.handle('workspace:get', () => {
   const root = ws.getWorkspace();
   return root ? { path: root, name: path.basename(root) } : null;
 });
+ipcMain.handle('workspace:list', () => ws.listWorkspaces());
+ipcMain.handle('workspace:switch', (_e, dir) => {
+  forgetRoot();
+  const root = ws.setWorkspace(dir);
+  return { path: root, name: path.basename(root) };
+});
+ipcMain.handle('workspace:forget', (_e, dir) => ws.forgetWorkspace(dir));
+
+ipcMain.handle('packs:list', () => core.listPacks());
+ipcMain.handle('packs:install', (_e, id) => core.installPack(id));
+
 ipcMain.handle('workspace:choose', async () => {
   const r = await dialog.showOpenDialog(win, {
     title: 'اختر مجلد العمل',

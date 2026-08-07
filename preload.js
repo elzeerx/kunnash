@@ -4,6 +4,11 @@ contextBridge.exposeInMainWorld('kunnash', {
   // مساحة العمل
   getWorkspace: () => ipcRenderer.invoke('workspace:get'),
   chooseWorkspace: () => ipcRenderer.invoke('workspace:choose'),
+  listWorkspaces: () => ipcRenderer.invoke('workspace:list'),
+  switchWorkspace: (dir) => ipcRenderer.invoke('workspace:switch', dir),
+  forgetWorkspace: (dir) => ipcRenderer.invoke('workspace:forget', dir),
+  listPacks: () => ipcRenderer.invoke('packs:list'),
+  installPack: (id) => ipcRenderer.invoke('packs:install', id),
 
   // الاتصال بالنموذج
   getConnection: () => ipcRenderer.invoke('connection:get'),
