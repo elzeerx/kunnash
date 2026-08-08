@@ -1,0 +1,382 @@
+/* kunnash.app — صفحة كُنّاش
+   اللوحة هي لوحة التطبيق نفسها (renderer/style.css) فيتعرّف عليه من نزّله.
+   والهوية البصرية ما تزال مؤجَّلة: حين تُحسم، تُبدَّل هذه الكتلة وحدها. */
+
+@font-face {
+  font-family: 'Plex Arabic';
+  src: url('fonts/IBMPlexSansArabic-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Plex Arabic';
+  src: url('fonts/IBMPlexSansArabic-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-display: swap;
+}
+
+:root {
+  --accent: #2F6F62;
+  --accent-strong: #22544A;
+  --accent-wash: #E8F1EE;
+  --accent-line: #BBD7D0;
+  --ink: #26241F;
+  --muted: #6E675C;
+  --line: #E4DED3;
+  --bg: #FAF8F4;
+  --surface: #FFFFFF;
+  --code-bg: #F2EEE8;
+  --on-accent: #FFFFFF;
+
+  --measure: 42rem;      /* عرض سطر مريح للقراءة العربية */
+  --wide: 64rem;
+  --pad: clamp(1.25rem, 5vw, 2.5rem);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --accent: #6FA79A;
+    --accent-strong: #8FC0B4;
+    --accent-wash: #1E2A27;
+    --accent-line: #33544C;
+    --ink: #EDE9E1;
+    --muted: #9E968A;
+    --line: #33302A;
+    --bg: #1A1815;
+    --surface: #221F1B;
+    --code-bg: #262320;
+    --on-accent: #10201C;
+  }
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+body, h1, h2, h3, p, dl, dd, ul, figure, pre { margin: 0; }
+ul { padding: 0; list-style: none; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  font-family: 'Plex Arabic', -apple-system, 'Segoe UI', sans-serif;
+  font-size: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+  line-height: 1.85;
+  color: var(--ink);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--accent-strong); text-underline-offset: .25em; }
+a:hover { color: var(--accent); }
+
+strong, b { font-weight: 600; }
+
+code {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: .875em;
+  background: var(--code-bg);
+  padding: .12em .4em;
+  border-radius: .35em;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+/* مسار عربي داخل شيفرة: فرضُ ltr يقذف «.md» إلى صدر السطر فتُقرأ أولًا.
+   وسمة dir في HTML لا تغلب قاعدة CSS، فيلزم استثناء صريح. */
+code[dir="rtl"] { direction: rtl; }
+
+.skip {
+  position: absolute; inset-inline-start: -9999px;
+  background: var(--accent); color: var(--on-accent);
+  padding: .75rem 1.25rem; border-radius: 0 0 .5rem 0;
+}
+.skip:focus { inset-inline-start: 0; z-index: 10; }
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: .25rem;
+}
+
+.wrap {
+  max-width: var(--wide);
+  margin-inline: auto;
+  padding-inline: var(--pad);
+}
+
+/* ————————————————— الواجهة ————————————————— */
+
+.hero {
+  text-align: center;
+  padding: clamp(3rem, 9vw, 6rem) var(--pad) clamp(2.5rem, 7vw, 4.5rem);
+  max-width: 52rem;
+  margin-inline: auto;
+}
+
+.hero-icon {
+  width: clamp(84px, 14vw, 128px);
+  height: auto;
+  margin-bottom: 1.25rem;
+}
+
+h1 {
+  font-size: clamp(2.75rem, 9vw, 4.5rem);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -.01em;
+}
+
+.tagline {
+  color: var(--accent);
+  font-size: clamp(1.05rem, 2.6vw, 1.35rem);
+  margin-top: .5rem;
+}
+
+.lede {
+  max-width: var(--measure);
+  margin: 1.75rem auto 0;
+  color: var(--muted);
+  font-size: clamp(1.05rem, 2.4vw, 1.2rem);
+}
+.lede strong { color: var(--ink); }
+
+.download {
+  display: inline-flex;
+  flex-direction: column;
+  gap: .15rem;
+  margin-top: 2.25rem;
+  padding: .9rem 2.25rem;
+  background: var(--accent);
+  color: var(--on-accent);
+  border-radius: .75rem;
+  text-decoration: none;
+  transition: background .15s ease, transform .15s ease;
+}
+.download:hover {
+  background: var(--accent-strong);
+  color: var(--on-accent);
+  transform: translateY(-1px);
+}
+.download-main { font-weight: 600; font-size: 1.125rem; }
+.download-sub { font-size: .875rem; opacity: .85; }
+
+.req {
+  margin-top: 1rem;
+  color: var(--muted);
+  font-size: .9rem;
+}
+.req strong { color: var(--ink); }
+
+.trust {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: .5rem .75rem;
+  margin-top: 2rem;
+}
+.trust li {
+  font-size: .875rem;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 2rem;
+  padding: .25rem 1rem;
+}
+
+/* ————————————————— الأقسام ————————————————— */
+
+section { padding-block: clamp(3rem, 8vw, 5.5rem); }
+
+.band {
+  background: var(--surface);
+  border-block: 1px solid var(--line);
+}
+
+h2 {
+  font-size: clamp(1.6rem, 4.5vw, 2.25rem);
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -.005em;
+}
+
+.sub {
+  max-width: var(--measure);
+  margin-top: .85rem;
+  color: var(--muted);
+}
+.sub strong, .sub b { color: var(--ink); }
+
+.note {
+  max-width: var(--measure);
+  margin-top: 1.5rem;
+  padding-inline-start: 1rem;
+  border-inline-start: 3px solid var(--accent-line);
+  color: var(--muted);
+  font-size: .95rem;
+}
+.note.plain { border: 0; padding-inline-start: 0; margin-top: 2.5rem; }
+.note b { color: var(--ink); }
+
+/* ————————————————— كيف يجري العمل ————————————————— */
+
+.run {
+  max-width: 34rem;
+  margin: 2.5rem 0 0;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: .6rem;
+}
+
+.run-you {
+  align-self: flex-start;
+  background: var(--accent);
+  color: var(--on-accent);
+  padding: .6rem 1.1rem;
+  border-radius: 1rem 1rem 1rem .3rem;
+  font-weight: 600;
+  margin-bottom: .4rem;
+}
+
+.run-step {
+  color: var(--muted);
+  font-size: .95rem;
+  padding-inline-start: .25rem;
+}
+.run-skill { color: var(--accent-strong); }
+.run-step b { color: var(--ink); }
+
+.run-done {
+  margin-top: .5rem;
+  padding-top: .9rem;
+  border-top: 1px dashed var(--line);
+}
+
+/* ————————————————— البطاقات ————————————————— */
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1.25rem;
+  margin-top: 2.5rem;
+}
+
+.cards article {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: .875rem;
+  padding: 1.5rem;
+}
+.band .cards article { background: var(--bg); }
+
+.cards h3 {
+  font-size: 1.075rem;
+  font-weight: 600;
+  margin-bottom: .4rem;
+}
+.cards p { color: var(--muted); font-size: .95rem; line-height: 1.75; }
+
+/* ————————————————— الحماية ————————————————— */
+
+.guards { margin-top: 2.5rem; max-width: 46rem; }
+
+.guards dt {
+  font-weight: 600;
+  margin-top: 1.75rem;
+  padding-inline-start: 1.75rem;
+  position: relative;
+}
+.guards dt::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: 0;
+  top: .72em;
+  width: .6rem; height: .6rem;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.guards dt:first-child { margin-top: 0; }
+
+.guards dd {
+  margin-inline-start: 1.75rem;
+  margin-top: .3rem;
+  color: var(--muted);
+  font-size: .95rem;
+}
+.guards dd b { color: var(--ink); }
+
+/* ————————————————— المهارة ————————————————— */
+
+.skill {
+  margin-top: 2rem;
+  max-width: 46rem;
+  background: var(--code-bg);
+  border: 1px solid var(--line);
+  border-radius: .875rem;
+  padding: 1.5rem;
+  overflow-x: auto;
+  font-size: .9rem;
+  line-height: 1.9;
+}
+.skill code {
+  background: none;
+  padding: 0;
+  font-size: 1em;
+  font-family: 'Plex Arabic', ui-monospace, monospace;
+  white-space: pre-wrap;
+  /* الملف يخلط مفاتيح لاتينية (name/description) بقيم عربية.
+     جرّبنا unicode-bidi: plaintext — وهو ما يعرضه محرّر النصوص — فوقعت
+     القيمة يمين المفتاح، أي يقرأ العربيُّ «ردّ بريد» قبل أن يعرف أنها اسم.
+     فالمفروض rtl: المفتاح أولًا ثم قيمته، كما يُقرأ المعنى.
+     يخالف هذا شكلَ الملف في المحرّر، والفهم أولى هنا من محاكاة الأداة. */
+  direction: rtl;
+}
+
+/* ————————————————— صدقة ————————————————— */
+
+.charity .wrap { max-width: var(--measure); }
+.charity p + p { margin-top: 1.1rem; }
+.charity p { color: var(--muted); }
+.charity strong, .charity b { color: var(--ink); }
+.charity h2 { margin-bottom: 1.25rem; }
+
+/* ————————————————— أزرار ثانوية ————————————————— */
+
+.cta-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .75rem;
+  margin-top: 2rem;
+}
+
+.ghost {
+  display: inline-block;
+  padding: .6rem 1.4rem;
+  border: 1px solid var(--accent-line);
+  border-radius: .625rem;
+  color: var(--accent-strong);
+  background: var(--accent-wash);
+  text-decoration: none;
+  font-size: .95rem;
+}
+.ghost:hover { border-color: var(--accent); }
+
+/* ————————————————— التذييل ————————————————— */
+
+footer {
+  border-top: 1px solid var(--line);
+  padding-block: clamp(2.5rem, 6vw, 3.5rem);
+  color: var(--muted);
+  font-size: .9rem;
+}
+.foot-name {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: .5rem;
+}
+.foot-dim { margin-top: .75rem; opacity: .8; font-size: .85rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
