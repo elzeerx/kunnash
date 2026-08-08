@@ -215,31 +215,66 @@ html, body {
 /* كتل قابلة للنسخ: شيفرة، ومسودات في اقتباس، وجداول */
 .msg .bubble .copyable { position: relative; }
 .block-copy {
-  position: absolute; inset-block-start: 6px; inset-inline-start: 6px;
-  background: var(--surface); border: 1px solid var(--line); border-radius: 6px;
-  color: var(--muted); cursor: pointer; font-family: inherit; font-size: 10.5px;
-  padding: 2px 8px; opacity: 0; transition: opacity .15s;
+  background: none; border: none; border-radius: 5px;
+  color: var(--muted); cursor: pointer; font-family: inherit; font-size: 11px;
+  padding: 2px 6px; transition: color .15s, background .15s;
 }
-.copyable:hover .block-copy { opacity: 1; }
+.block-copy:hover { background: var(--surface); }
+/* داخل مسودة أو جدول يبقى عائمًا ويظهر عند المرور — الترويسة للشيفرة وحدها */
+.copyable > .block-copy {
+  position: absolute; inset-block-start: 2px; inset-inline-end: 2px;
+  opacity: 0; transition: opacity .15s;
+}
+.copyable:hover > .block-copy { opacity: 1; }
 .block-copy:hover { color: var(--accent-strong); border-color: var(--accent-soft); }
+/* المسودة (اقتباس): ما يأخذه المستخدم كما هو — بريدًا أو فقرة.
+   بلا صندوق ملوّن: خطٌّ رفيع وفراغ سخيّ، فتُقرأ كنصٍّ نهائي لا كبطاقة. */
 .msg .bubble blockquote {
-  margin: 10px 0; padding: 12px 16px;
-  background: var(--code-bg); border: 1px solid var(--line);
-  border-inline-start: 3px solid var(--accent-soft); border-radius: 10px;
+  margin: 18px 0;
+  padding: 2px 18px;
+  border-inline-start: 2px solid var(--accent-line);
+  color: var(--ink);
   white-space: pre-wrap;
 }
 .msg .bubble blockquote p { margin: 0; }
-.msg .bubble blockquote p + p { margin-top: 8px; }
-.msg .bubble table { border-collapse: collapse; margin: 10px 0; font-size: 13px; width: 100%; }
-.msg .bubble th, .msg .bubble td { border: 1px solid var(--line); padding: 6px 10px; text-align: start; }
-.msg .bubble th { background: var(--code-bg); font-weight: 600; }
-.msg .bubble h1, .msg .bubble h2, .msg .bubble h3 { margin: 14px 0 6px; line-height: 1.5; }
-.msg .bubble h1 { font-size: 17px; }
-.msg .bubble h2 { font-size: 15.5px; }
-.msg .bubble h3 { font-size: 14.5px; }
-.msg .bubble ul, .msg .bubble ol { margin: 6px 0; padding-inline-start: 22px; }
-.msg .bubble li { margin: 3px 0; }
-.msg .bubble hr { border: none; border-top: 1px solid var(--line); margin: 14px 0; }
+.msg .bubble blockquote p + p { margin-top: 12px; }
+
+/* الجدول: مسطرة تحت الترويسة وخيوط بين الصفوف — لا شبكة محبوسة */
+.msg .bubble table {
+  border-collapse: collapse; margin: 18px 0; font-size: 13.5px; width: 100%;
+}
+.msg .bubble th, .msg .bubble td {
+  padding: 8px 12px; text-align: start;
+  border: none; border-block-end: 1px solid var(--line);
+}
+.msg .bubble th {
+  background: none; font-weight: 600; color: var(--muted);
+  font-size: 12px; letter-spacing: .02em;
+  border-block-end: 1.5px solid var(--ink);
+}
+.msg .bubble tbody tr:last-child td { border-block-end: none; }
+
+/* سلّم العناوين: الفرق بينها بالوزن والفراغ لا بالحجم وحده */
+.msg .bubble h1, .msg .bubble h2, .msg .bubble h3,
+.msg .bubble h4, .msg .bubble h5, .msg .bubble h6 {
+  line-height: 1.45; font-weight: 600; margin: 26px 0 8px;
+}
+.msg .bubble > :first-child { margin-block-start: 0; }
+.msg .bubble h1 { font-size: 21px; letter-spacing: -.01em; }
+.msg .bubble h2 { font-size: 17.5px; }
+.msg .bubble h3 { font-size: 15.5px; }
+.msg .bubble h4, .msg .bubble h5, .msg .bubble h6 {
+  font-size: 14px; color: var(--muted);
+}
+
+.msg .bubble ul, .msg .bubble ol { margin: 10px 0; padding-inline-start: 24px; }
+.msg .bubble li { margin: 5px 0; }
+.msg .bubble li::marker { color: var(--accent); }
+.msg .bubble ul ul, .msg .bubble ol ol { margin: 4px 0; }
+
+.msg .bubble hr { border: none; border-top: 1px solid var(--line); margin: 26px 0; }
+.msg .bubble p { margin: 12px 0; }
+.msg .bubble strong { font-weight: 600; }
 
 /* أول تشغيل */
 .ob-steps { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; margin-bottom: 20px; }
@@ -430,28 +465,35 @@ html, body {
 
 .messages { display: flex; flex-direction: column; gap: 16px; max-width: 860px; margin: 0 auto; }
 
-.msg { display: flex; flex-direction: column; gap: 4px; }
+/* المحادثة كصفحة تُقرأ لا كفقاعات تُتبادَل.
+   الفقاعة المحاطة بإطار هي شكل «تطبيق دردشة»، وردُّ كُنّاش **مستند**: مسودة
+   بريد أو تقرير أو جدول يأخذه صاحبه كما هو. فالرد نصٌّ سائح بلا صندوق،
+   والسؤال يتميّز بخطٍّ رفيع ووزنٍ أثقل — كسؤالٍ في مقالة. */
+
+.msg { display: flex; flex-direction: column; gap: 6px; }
 .msg .bubble {
-  padding: 13px 17px;
-  border-radius: 14px;
-  font-size: 14.5px;
-  line-height: 1.9;
+  font-size: 15px;
+  line-height: 1.95;
   word-break: break-word;
+  max-width: 68ch;          /* مقياس القراءة: السطر الطويل يُتعب العين */
 }
-.msg.user { align-items: flex-start; }
+
+/* السؤال: خطٌّ على الحافة ووزنٌ أثقل — لا حشوة ولا لون */
 .msg.user .bubble {
-  background: var(--accent-wash);
-  border: 1px solid var(--accent-line);
-  border-radius: 14px 4px 14px 14px;
-  max-width: 75%;
+  padding-inline-start: 14px;
+  border-inline-start: 2px solid var(--accent-soft);
+  font-weight: 600;
   white-space: pre-wrap;
 }
-.msg.assistant .bubble {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 4px 14px 14px 14px;
-}
-.msg .meta { font-size: 11px; color: var(--muted); padding: 0 4px; }
+
+/* الجواب: بلا صندوق البتة */
+.msg.assistant .bubble { padding: 0; }
+
+.msg .meta { font-size: 11px; color: var(--muted); }
+
+/* عزل المقاطع المضمّنة (bidi.js): الترقيم محايد، فلولا العزل التصقت
+   الأقواس والنقاط بالجار الخطأ فصار «(config.json)» مقلوبًا. */
+.bidi-isolate { unicode-bidi: isolate; }
 
 .msg.assistant { position: relative; }
 .msg-copy {
@@ -498,29 +540,59 @@ html, body {
   margin: 2px 0;
 }
 
-.msg.assistant .bubble h1, .msg.assistant .bubble h2, .msg.assistant .bubble h3 { margin: 12px 0 6px; }
-.msg.assistant .bubble p { margin: 6px 0; }
-.msg.assistant .bubble ul, .msg.assistant .bubble ol { margin: 6px 18px 6px 0; padding-right: 6px; }
-.msg.assistant .bubble li { margin: 3px 0; }
-.msg.assistant .bubble pre {
-  background: var(--code-bg);
+/* كتلة الشيفرة: ترويسة حقيقية بدل حشو ٣٠ بكسل تحت زرٍّ عائم.
+   والترويسة تكسب فائدة ثانية: **اسم اللغة**. فالمستخدم العادي يحتاج أن
+   يعرف أهذا أمرٌ يُلصق في الطرفية أم بيانات JSON — والفرق لا يُرى بلا اسم. */
+.code-block {
+  margin: 18px 0;
   border: 1px solid var(--line);
   border-radius: 8px;
-  padding: 10px;
-  padding-top: 30px;
+  background: var(--code-bg);
+  overflow: hidden;
+}
+.code-block > figcaption {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 5px 12px;
+  border-block-end: 1px solid var(--line);
+  font-size: 11.5px; color: var(--muted);
+}
+.code-block .lang { letter-spacing: .03em; }
+
+.msg .bubble pre {
+  margin: 0;
+  padding: 12px 14px;
   overflow-x: auto;
-  unicode-bidi: plaintext; /* كل سطر حسب لغته: العربية يمينًا والكود يسارًا */
+  /* plaintext لا ltr: النموذج قد يضع داخل السياج نصًّا عربيًا (مسودة بريد
+     مثلًا) لا شيفرة. فكل سطر يأخذ اتجاهه من لغته هو. */
+  unicode-bidi: plaintext;
   text-align: start;
   font-size: 13px;
-  font-family: 'IBM Plex Sans Arabic', ui-monospace, monospace;
-  line-height: 1.9;
-  position: relative;
+  font-family: ui-monospace, SFMono-Regular, Menlo, 'IBM Plex Sans Arabic', monospace;
+  line-height: 1.85;
 }
-.msg.assistant .bubble code { background: var(--code-bg); border-radius: 4px; padding: 1px 5px; font-size: 13px; }
-.msg.assistant .bubble pre code { background: none; padding: 0; }
-.msg.assistant .bubble table { border-collapse: collapse; margin: 8px 0; }
-.msg.assistant .bubble th, .msg.assistant .bubble td { border: 1px solid var(--line); padding: 6px 10px; font-size: 13px; }
-.msg.assistant .bubble th { background: var(--bg); }
+/* سياج بلا ترويسة (لم يمرّ على addCopyControls بعد): يبقى مقروءًا */
+.msg .bubble > pre {
+  border: 1px solid var(--line); border-radius: 8px; margin: 18px 0;
+}
+
+.msg .bubble code {
+  background: var(--code-bg);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: .92em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, 'IBM Plex Sans Arabic', monospace;
+}
+.msg .bubble pre code { background: none; padding: 0; font-size: inherit; }
+
+/* مسار عربي داخل باكتيك: خطوط الآلة الكاتبة لا تحمل عربية، فيسقط الحرف
+   إلى بديلٍ يمطّ الوصلات فتصير «الـمـخـرجـات» ممزّقة. فمتى غلبت العربية
+   (يضع bidi.js عليها dir="rtl") رجعنا إلى خطّ الواجهة. */
+.msg .bubble code[dir="rtl"] {
+  font-family: 'IBM Plex Sans Arabic', sans-serif;
+  font-size: .95em;
+}
+/* كانت هنا قواعد جدول مكرّرة أخصّ (‎.msg.assistant‎) تغلب قواعد ‎.msg‎
+   أعلاه فتعيد الشبكة المحبوسة. أُسقطت: تعريفٌ واحد للجدول لا اثنان. */
 .msg.assistant .bubble a { color: var(--accent-strong); }
 .file-link {
   color: var(--accent-strong) !important;
@@ -531,7 +603,9 @@ html, body {
 }
 .file-link:hover { background: var(--accent-wash); border-radius: 4px; }
 .file-missing { color: var(--muted) !important; text-decoration: line-through; cursor: not-allowed; }
-.msg.assistant .bubble blockquote { border-right: 3px solid var(--accent-soft); padding-right: 12px; color: var(--muted); margin: 8px 0; }
+/* أُسقطت قاعدة اقتباس مكرّرة كانت تُبهت المسودة بـ--muted وتستعمل
+   border-right الثابت بدل border-inline-start. والمسودة **نصٌّ نهائي
+   يأخذه صاحبه**، فبهتانها يوحي بأنها هامش لا مقصود. */
 
 .typing { color: var(--muted); font-size: 13px; padding: 0 4px; }
 .typing .dots::after { content: '…'; animation: blink 1.2s infinite; }

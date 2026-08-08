@@ -27,7 +27,11 @@ const ALLOWED_TAGS = new Set([
   'UL', 'OL', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6',
   'A', 'TABLE', 'THEAD', 'TBODY', 'TR', 'TH', 'TD',
 ]);
-const ALLOWED_ATTRS = { A: ['href', 'title'], TD: ['align'], TH: ['align'] };
+const ALLOWED_ATTRS = { A: ['href', 'title'], TD: ['align'], TH: ['align'], CODE: ['class'] };
+// class على code وحدها، وبشرط أن تكون اسم لغة — لا صنفًا حرًّا. نحتاجها
+// لنعرض «bash» أو «json» في ترويسة الكتلة: المستخدم العادي لا يميّز أمرًا
+// يُلصق في الطرفية من بيانات إلا بالاسم.
+const LANG_CLASS = /^language-[\w+#.-]{1,24}$/;
 
 function sanitizeTree(root) {
   for (const el of [...root.querySelectorAll('*')]) {
@@ -36,8 +40,11 @@ function sanitizeTree(root) {
       continue;
     }
     for (const attr of [...el.attributes]) {
-      if (!(ALLOWED_ATTRS[el.tagName] || []).includes(attr.name.toLowerCase())) {
+      const name = attr.name.toLowerCase();
+      if (!(ALLOWED_ATTRS[el.tagName] || []).includes(name)) {
         el.removeAttribute(attr.name);       // يشمل كل on* وstyle
+      } else if (name === 'class' && !LANG_CLASS.test(attr.value)) {
+        el.removeAttribute(attr.name);       // صنف ليس اسم لغة: لا يمرّ
       }
     }
     const href = el.getAttribute('href');
@@ -51,6 +58,9 @@ function renderMarkdown(text) {
   try {
     box.innerHTML = marked.parse(String(text), { breaks: true, gfm: true });
     sanitizeTree(box);
+    // لكل فقرة اتجاهها من نصّها هي (bidi.js): ردٌّ واحد قد يحمل فقرة عربية
+    // وأخرى إنجليزية وكتلة شيفرة — واتجاهٌ واحد مفروض يُفسد اثنتين منها.
+    bidi.applyDir(box);
   } catch {
     box.textContent = String(text);
   }
@@ -275,6 +285,7 @@ function addUserMsg(text, attachNames) {
   const bubble = document.createElement('div');
   bubble.className = 'bubble';
   bubble.textContent = text;
+  bidi.setDir(bubble, text);        // «React هو مكتبة…» تبقى يمينية
   div.appendChild(bubble);
   messagesEl.appendChild(div);
   scrollDown();
@@ -386,7 +397,37 @@ function addCopyControls(msgDiv, rawText) {
   btn.onclick = () => copyFeedback(btn, rawText);
   msgDiv.appendChild(btn);
 
-  for (const block of msgDiv.querySelectorAll('pre, blockquote, table')) {
+  // الشيفرة تُغلَّف بترويسة تحمل اسم اللغة وزر النسخ — لا زرًّا عائمًا فوقها
+  for (const pre of msgDiv.querySelectorAll('pre')) {
+    if (pre.closest('.code-block')) continue;
+    const content = pre.innerText.trim();
+    if (!content) continue;
+
+    const code = pre.querySelector('code');
+    const cls = (code && code.getAttribute('class')) || '';
+    const lang = cls.startsWith('language-') ? cls.slice(9) : '';
+
+    const fig = document.createElement('figure');
+    fig.className = 'code-block';
+    const cap = document.createElement('figcaption');
+    const name = document.createElement('span');
+    name.className = 'lang bidi-isolate';
+    name.setAttribute('dir', 'ltr');
+    name.textContent = lang || 'نص';
+    const b = document.createElement('button');
+    b.className = 'block-copy';
+    b.textContent = '⧉ نسخ';
+    b.onclick = (e) => { e.stopPropagation(); copyFeedback(b, content); };
+    cap.appendChild(name);
+    cap.appendChild(b);
+
+    pre.replaceWith(fig);
+    fig.appendChild(cap);
+    fig.appendChild(pre);
+  }
+
+  // المسودات والجداول: زرٌّ يظهر عند المرور، بلا تغيير بنيتها
+  for (const block of msgDiv.querySelectorAll('blockquote, table')) {
     if (block.querySelector('.block-copy')) continue;
     const content = block.innerText.trim();
     if (!content) continue;
