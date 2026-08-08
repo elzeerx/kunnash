@@ -229,15 +229,17 @@ html, body {
 .block-copy:hover { color: var(--accent-strong); border-color: var(--accent-soft); }
 /* المسودة (اقتباس): ما يأخذه المستخدم كما هو — بريدًا أو فقرة.
    بلا صندوق ملوّن: خطٌّ رفيع وفراغ سخيّ، فتُقرأ كنصٍّ نهائي لا كبطاقة. */
+/* المسودة: ما يُنسخ ويُرسل. بلا white-space: pre-wrap — الماركداون يبني
+   فقرات أصلًا، فإبقاؤه يضيف أسطر المصدر **فوق** هوامش الفقرات فتتضاعف
+   الفراغات وتبدو الرسالة ممزّقة. */
 .msg .bubble blockquote {
-  margin: 18px 0;
-  padding: 2px 18px;
-  border-inline-start: 2px solid var(--accent-line);
+  margin: 20px 0;
+  padding: 4px 18px;
+  border-inline-start: 2px solid var(--accent-soft);
   color: var(--ink);
-  white-space: pre-wrap;
 }
 .msg .bubble blockquote p { margin: 0; }
-.msg .bubble blockquote p + p { margin-top: 12px; }
+.msg .bubble blockquote p + p { margin-top: 10px; }
 
 /* الجدول: مسطرة تحت الترويسة وخيوط بين الصفوف — لا شبكة محبوسة */
 .msg .bubble table {
@@ -471,26 +473,31 @@ html, body {
    بريد أو تقرير أو جدول يأخذه صاحبه كما هو. فالرد نصٌّ سائح بلا صندوق،
    والسؤال يتميّز بخطٍّ رفيع ووزنٍ أثقل — كسؤالٍ في مقالة. */
 
-.msg { display: flex; flex-direction: column; gap: 6px; }
+/* بطاقة مستند لا فقاعة محادثة.
+   الفرق ليس في وجود الإطار بل في نسبه: الفقاعة ضيّقة (٧٥٪) ولها ذيل عند
+   الزاوية وحشوة شحيحة — فتقول «رسالة قصيرة في محادثة». والبطاقة تملأ
+   العمود، وانحناؤها كبير متساوٍ بلا ذيل، وحشوتها سخيّة — فتقول «مستند
+   يُقرأ ويُنسخ»، وهو ما يُخرجه كُنّاش فعلًا. */
+
+.msg { display: flex; flex-direction: column; gap: 8px; }
 .msg .bubble {
+  padding: 22px 26px;
+  border: 1px solid var(--line);
+  border-radius: 18px;        /* متساوٍ في الزوايا الأربع — لا ذيل */
+  background: var(--surface);
   font-size: 15px;
   line-height: 1.95;
   word-break: break-word;
-  max-width: 68ch;          /* مقياس القراءة: السطر الطويل يُتعب العين */
 }
 
-/* السؤال: خطٌّ على الحافة ووزنٌ أثقل — لا حشوة ولا لون */
 .msg.user .bubble {
-  padding-inline-start: 14px;
-  border-inline-start: 2px solid var(--accent-soft);
-  font-weight: 600;
+  background: var(--accent-wash);
+  border-color: var(--accent-line);
   white-space: pre-wrap;
 }
 
-/* الجواب: بلا صندوق البتة */
-.msg.assistant .bubble { padding: 0; }
-
-.msg .meta { font-size: 11px; color: var(--muted); }
+/* اسم النموذج فوق البطاقة، خفيفًا: يخبرك من يتكلم بلا أن يزاحم كلامه */
+.msg .meta { font-size: 11.5px; color: var(--muted); padding-inline: 4px; }
 
 /* عزل المقاطع المضمّنة (bidi.js): الترقيم محايد، فلولا العزل التصقت
    الأقواس والنقاط بالجار الخطأ فصار «(config.json)» مقلوبًا. */
@@ -547,8 +554,8 @@ html, body {
 .code-block {
   margin: 18px 0;
   border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--code-bg);
+  border-radius: 10px;
+  background: var(--bg);
   overflow: hidden;
 }
 .code-block > figcaption {
@@ -573,17 +580,21 @@ html, body {
 }
 /* سياج بلا ترويسة (لم يمرّ على addCopyControls بعد): يبقى مقروءًا */
 .msg .bubble > pre {
-  border: 1px solid var(--line); border-radius: 8px; margin: 18px 0;
+  border: 1px solid var(--line); border-radius: 10px; margin: 18px 0;
+  background: var(--bg);
 }
 
+/* الشيفرة والمسارات بلون مميّز: المستخدم يمسح البطاقة بعينه بحثًا عن
+   «أين حفظه؟» — واللون يجعل المسار يقفز إليه بلا أن يقرأ الفقرة كلها. */
 .msg .bubble code {
   background: var(--code-bg);
-  border-radius: 4px;
-  padding: 1px 5px;
+  color: var(--accent-strong);
+  border-radius: 5px;
+  padding: 1.5px 6px;
   font-size: .92em;
   font-family: ui-monospace, SFMono-Regular, Menlo, 'IBM Plex Sans Arabic', monospace;
 }
-.msg .bubble pre code { background: none; padding: 0; font-size: inherit; }
+.msg .bubble pre code { background: none; color: var(--ink); padding: 0; font-size: inherit; }
 
 /* مسار عربي داخل باكتيك: خطوط الآلة الكاتبة لا تحمل عربية، فيسقط الحرف
    إلى بديلٍ يمطّ الوصلات فتصير «الـمـخـرجـات» ممزّقة. فمتى غلبت العربية
