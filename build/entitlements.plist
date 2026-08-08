@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  تصاريح وقت التشغيل المتصلّب (Hardened Runtime).
+
+  المبدأ: أقلّ ما يكفي. كل تصريح هنا ثقبٌ في الحماية، فلا يدخل إلا بحجة.
+
+  ما دخل:
+    allow-jit                      — محرك V8 يولّد شيفرة تنفيذية وقت التشغيل
+    allow-unsigned-executable-memory — يحتاجه Chromium تحت الحماية المتصلّبة
+
+  ما لم يدخل ولماذا:
+    disable-library-validation     — يلزم من يحمّل وحدات أصلية من طرف ثالث،
+                                     وكُنّاش **بلا تبعيات تشغيل** فلا يحمّل شيئًا
+                                     لم نوقّعه نحن. قرار «بلا تبعيات» يدفع ثمنه
+                                     هنا حمايةً أضيق ثقبًا.
+    allow-dyld-environment-variables — لا نضبط متغيّرات dyld لأي عملية
+    files.user-selected / network  — تصاريح صندوق رملي، ولا صندوق رملي هنا
+                                     (التوزيع خارج المتجر). الوصول للملفات
+                                     يحكمه TCC وحارس المسار في lib/paths.js
+-->
+<plist version="1.0">
+<dict>
+  <key>com.apple.security.cs.allow-jit</key>
+  <true/>
+  <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+  <true/>
+</dict>
+</plist>
