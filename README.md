@@ -6,11 +6,11 @@
 
 ## التحميل
 
-**[⬇︎ حمّل كُنّاش لـmacOS](https://github.com/Kunnash/Kunnash/releases/latest)** — يحتاج macOS 12 فأحدث
+**[⬇︎ حمّل كُنّاش لـmacOS](https://github.com/elzeerx/kunnash/releases/latest)** — يحتاج macOS 12 فأحدث
 
 افتح ملف `.dmg` واسحب كُنّاش إلى «التطبيقات». التطبيق **موقَّع وموثَّق لدى آبل**، فيفتح بنقرة واحدة بلا تحذيرات.
 
-> **أجهزة Apple Silicon** (ماك ٢٠٢٠ فأحدث). دعم معالجات إنتل مؤجَّل — إن كان جهازك إنتل فأخبرنا في [المسائل](https://github.com/Kunnash/Kunnash/issues) ونقدّمه.
+> **أجهزة Apple Silicon** (ماك ٢٠٢٠ فأحدث). دعم معالجات إنتل مؤجَّل — إن كان جهازك إنتل فأخبرنا في [المسائل](https://github.com/elzeerx/kunnash/issues) ونقدّمه.
 
 وأول تشغيل يمشي بك في أربع خطوات: اسمك، فمجلد العمل، فربط النموذج، فحزمة مهارات جاهزة تبدأ بها بدل صفحة فارغة.
 
@@ -85,7 +85,8 @@ lib/connection.js الاتصال بالنموذج — بث SSE لواجهة Open
 lib/core.js      النواة: الجلسات والدردشة — لا تعرف Electron
 lib/library.js   المهارات والعملاء كملفات
 lib/attachments.js المرفقات → أجزاء رسالة
-lib/agent/       حلقة الأدوات: loop (الجولات والحدود) · tools (١٢ أداة) ·
+lib/agent/       حلقة الأدوات: loop (الجولات والحدود) · tools (١٧ أداة) ·
+                 permissions (قواعد ذات نطاق) · skills (المحفّز الحتمي) ·
                  registry (تحقق متساهل وإصلاح JSON) · transcript (ذاكرة وتقليم) ·
                  ziplite+office (قراءة xlsx/docx وكتابتها بلا تبعيات)
 renderer/        الواجهة، ومعها vendor/ لما تحتاجه من مكتبات
