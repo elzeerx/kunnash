@@ -14,19 +14,19 @@
       <div class="sidebar-head">
         <div class="app-title">
           <h1>كُنّاش</h1>
-          <p>دفتر العالِم الذي يجمع فيه ما ينفعه</p>
+          <p data-i18n="tagline">دفتر العالِم الذي يجمع فيه ما ينفعه</p>
         </div>
       </div>
 
-      <button id="btn-new" class="btn-primary">＋ محادثة جديدة</button>
+      <button id="btn-new" class="btn-primary" data-i18n="newChat">＋ محادثة جديدة</button>
 
-      <div class="sessions-label">المحادثات</div>
+      <div class="sessions-label" data-i18n="chats">المحادثات</div>
       <nav id="sessions-list" class="sessions-list"></nav>
 
       <div class="sidebar-foot">
-        <button id="btn-library" class="btn-ghost" title="إدارة العملاء والمهارات">🤖 العملاء والمهارات</button>
-        <button id="btn-folder" class="btn-ghost" title="فتح مجلد العمل">📁 <span id="workspace-name">مجلد العمل</span></button>
-        <button id="btn-settings" class="btn-ghost" title="الاتصال بالنموذج">⚙️ الإعدادات</button>
+        <button id="btn-library" class="btn-ghost" data-i18n="library" data-i18n-title="libraryTitle">🤖 العملاء والمهارات</button>
+        <button id="btn-folder" class="btn-ghost" data-i18n-title="workspaceTitle">📁 <span id="workspace-name" data-i18n="workspace">مجلد العمل</span></button>
+        <button id="btn-settings" class="btn-ghost" data-i18n="settings" data-i18n-title="settingsTitle">⚙️ الإعدادات</button>
       </div>
     </aside>
 
@@ -36,28 +36,28 @@
 
         <!-- أول تشغيل: أربع خطوات من التثبيت إلى أول مخرَج -->
         <div id="onboarding" class="empty-state hidden">
-          <h2 id="ob-title">حيّاك الله في كُنّاش</h2>
+          <h2 id="ob-title" data-i18n="welcome">حيّاك الله في كُنّاش</h2>
           <p id="ob-lede" class="ws-lede"></p>
           <div id="ob-steps" class="ob-steps"></div>
           <div id="ob-body" class="ob-body"></div>
           <div class="ob-actions">
-            <button id="ob-next" class="btn-primary btn-lg">التالي</button>
-            <button id="ob-skip" class="btn-ghost-dark">تخطَّ هذه الخطوة</button>
+            <button id="ob-next" class="btn-primary btn-lg" data-i18n="next">التالي</button>
+            <button id="ob-skip" class="btn-ghost-dark" data-i18n="skipStep">تخطَّ هذه الخطوة</button>
           </div>
         </div>
 
         <!-- لوحة البداية -->
         <div id="empty-state" class="empty-state">
-          <h2 id="greeting">حيّاك الله</h2>
+          <h2 id="greeting" data-i18n="greeting">حيّاك الله</h2>
           <div id="connection-chip" class="chips-row"></div>
 
           <div class="home-grid">
             <section class="home-card">
-              <h3>⚡ مهام سريعة <span class="home-card-hint">تنفّذ مهاراتك بنقرة</span></h3>
+              <h3><span data-i18n="quickTasks">⚡ مهام سريعة</span> <span class="home-card-hint" data-i18n="quickHint">تنفّذ مهاراتك بنقرة</span></h3>
               <div id="home-skills" class="home-list"></div>
             </section>
             <section class="home-card">
-              <h3>📁 آخر الملفات المحدثة <span class="home-card-hint">انقر ملفًا لتحليله</span></h3>
+              <h3><span data-i18n="recentFiles">📁 آخر الملفات المحدثة</span> <span class="home-card-hint" data-i18n="recentHint">انقر ملفًا لتحليله</span></h3>
               <div id="home-files" class="home-list"></div>
             </section>
           </div>
@@ -70,24 +70,24 @@
         <!-- مؤشر العمل: يظهر ما دام التشغيل جاريًا ويسمّي ما يفعله الآن -->
         <div id="run-status" class="run-status hidden">
           <span class="run-dot"></span>
-          <span id="run-status-text">يعمل…</span>
+          <span id="run-status-text" data-i18n="working">يعمل…</span>
           <span id="run-status-time" class="run-time"></span>
         </div>
         <div class="composer">
           <div id="attach-list" class="attach-list"></div>
-          <textarea id="input" rows="1" placeholder="اكتب رسالتك… (Enter للإرسال، Shift+Enter لسطر جديد، أو اسحب ملفات هنا)"></textarea>
+          <textarea id="input" rows="1" data-i18n-placeholder="composerHint"></textarea>
           <div class="composer-controls">
             <div class="composer-selects">
-              <button id="btn-attach" class="btn-attach" title="إرفاق ملفات">＋</button>
-              <select id="activation-picker" title="تفعيل مهارة أو تكليف عميل">
-                <option value="">تفعيل تلقائي</option>
+              <button id="btn-attach" class="btn-attach" data-i18n-title="attach">＋</button>
+              <select id="activation-picker" data-i18n-title="activation">
+                <option value="" data-i18n="autoTrigger">تفعيل تلقائي</option>
               </select>
-              <button id="model-chip" class="model-chip" title="تغيير النموذج من الإعدادات">لم يُحدَّد نموذج</button>
+              <button id="model-chip" class="model-chip" data-i18n-title="modelChipTitle" data-i18n="noModel">لم يُحدَّد نموذج</button>
             </div>
-            <button id="btn-send" class="btn-send" title="إرسال">إرسال</button>
+            <button id="btn-send" class="btn-send" data-i18n-title="send" data-i18n="send">إرسال</button>
           </div>
         </div>
-        <div class="composer-hint">ما تكتبه هنا يغادر جهازك إلى مزوّد النموذج الذي اخترته · ملفاتك تبقى مكانها</div>
+        <div class="composer-hint" data-i18n="privacyNote">ما تكتبه هنا يغادر جهازك إلى مزوّد النموذج الذي اخترته · ملفاتك تبقى مكانها</div>
       </div>
     </main>
   </div>
@@ -96,71 +96,77 @@
   <div id="settings-modal" class="modal hidden">
     <div class="modal-card">
       <div class="modal-head">
-        <h3>⚙️ الإعدادات</h3>
+        <h3 data-i18n="settings">⚙️ الإعدادات</h3>
         <button id="btn-close-settings" class="btn-x">✕</button>
       </div>
 
-      <h4 class="section-title">عنك</h4>
+      <h4 class="section-title" data-i18n="aboutYou">عنك</h4>
       <div class="conn-form">
-        <label for="profile-name">الاسم الذي تحب أن يناديك به</label>
-        <input id="profile-name" type="text" placeholder="مثال: نوّاف" />
+        <label for="profile-name" data-i18n="yourName">الاسم الذي تحب أن يناديك به</label>
+        <input id="profile-name" type="text" data-i18n-placeholder="yourNameHint" />
+
+        <label for="ui-lang" data-i18n="uiLanguage">لغة الواجهة</label>
+        <select id="ui-lang">
+          <option value="ar">العربية</option>
+          <option value="en">English</option>
+        </select>
+        <p class="modal-note" data-i18n="uiLanguageNote"></p>
       </div>
 
-      <h4 class="section-title">ما يتذكره كُنّاش عنك</h4>
-      <p class="modal-note">لا يُحفظ شيء إلا باختيارك الصريح، وكل بند هنا يُحذف بنقرة.</p>
+      <h4 class="section-title" data-i18n="memory">ما يتذكره كُنّاش عنك</h4>
+      <p class="modal-note" data-i18n="memoryNote">لا يُحفظ شيء إلا باختيارك الصريح، وكل بند هنا يُحذف بنقرة.</p>
       <div id="prefs-list" class="prefs-list"></div>
 
-      <h4 class="section-title">الأذونات الدائمة</h4>
-      <p class="modal-note">ما سمحتَ به «دائمًا» — كل قاعدة محصورة في نطاق الطلب الذي ولّدها، وتُسحب بنقرة.</p>
+      <h4 class="section-title" data-i18n="rules">الأذونات الدائمة</h4>
+      <p class="modal-note" data-i18n="rulesNote">ما سمحتَ به «دائمًا» — كل قاعدة محصورة في نطاق الطلب الذي ولّدها، وتُسحب بنقرة.</p>
       <div id="rules-list" class="prefs-list"></div>
 
-      <h4 class="section-title">الاتصال بالنموذج</h4>
-      <p class="modal-note">اختر خدمة جاهزة أو اكتب أي خدمة تتكلم لغة OpenAI.
-      المفتاح يُحفظ مشفَّرًا على جهازك، ولكل خدمة مفتاحها ونموذجها.</p>
+      <h4 class="section-title" data-i18n="connection">الاتصال بالنموذج</h4>
+      <p class="modal-note" data-i18n="connectionNote"></p>
 
       <div id="preset-row" class="preset-row"></div>
       <p id="preset-hint" class="preset-hint"></p>
 
       <div id="or-link-row" class="or-link-row hidden">
-        <button id="btn-link-or" class="btn-primary">🔗 الربط بضغطة — يفتح المتصفح</button>
+        <button id="btn-link-or" class="btn-primary" data-i18n="linkOr">🔗 الربط بضغطة — يفتح المتصفح</button>
         <span id="or-link-status" class="test-status"></span>
       </div>
 
       <div class="conn-form">
-        <label for="conn-model">النموذج المختار</label>
+        <label for="conn-model" data-i18n="chosenModel">النموذج المختار</label>
         <div class="model-row">
-          <input id="conn-model" type="text" dir="ltr" placeholder="اسم النموذج" />
-          <button id="btn-refresh-models" class="btn-ghost-dark" title="جلب قائمة النماذج من الخدمة">↻ القائمة</button>
+          <input id="conn-model" type="text" dir="ltr" data-i18n-placeholder="modelName" />
+          <button id="btn-refresh-models" class="btn-ghost-dark" data-i18n-title="refreshTitle" data-i18n="refreshModels">↻ القائمة</button>
         </div>
 
         <div id="model-picker-box" class="model-picker-box hidden">
-          <input id="model-filter" type="text" placeholder="ابحث في القائمة… (مثال: sonnet)" />
+          <input id="model-filter" type="text" data-i18n-placeholder="searchModels" />
           <select id="model-list" size="6"></select>
           <span id="model-count" class="label-note"></span>
         </div>
 
-        <label for="conn-key">المفتاح <span id="key-optional-note" class="label-note hidden">— الخدمة المحلية لا تحتاجه</span></label>
+        <label for="conn-key"><span data-i18n="apiKey">المفتاح</span> <span id="key-optional-note" class="label-note hidden" data-i18n="keyOptional">— الخدمة المحلية لا تحتاجه</span></label>
         <input id="conn-key" type="password" dir="ltr" placeholder="sk-..." />
 
         <details id="conn-advanced">
-          <summary>خيارات متقدمة</summary>
-          <label for="conn-label">الاسم الظاهر</label>
+          <summary data-i18n="advanced">خيارات متقدمة</summary>
+          <label for="conn-label" data-i18n="displayName">الاسم الظاهر</label>
           <input id="conn-label" type="text" placeholder="OpenRouter" />
-          <label for="conn-url">عنوان الخدمة (Base URL)</label>
+          <label for="conn-url" data-i18n="baseUrl">عنوان الخدمة (Base URL)</label>
           <input id="conn-url" type="text" dir="ltr" placeholder="https://openrouter.ai/api/v1" />
         </details>
 
         <label id="data-policy-row" class="policy-row hidden">
           <input id="conn-data-policy" type="checkbox" checked />
-          <span>لا تمرّر طلباتي لمزوّد يتدرّب على البيانات <span class="label-note">(خيار OpenRouter — قد يحجب نماذج قليلة)</span></span>
+          <span><span data-i18n="dataPolicy">لا تمرّر طلباتي لمزوّد يتدرّب على البيانات</span> <span class="label-note" data-i18n="dataPolicyNote">(خيار OpenRouter — قد يحجب نماذج قليلة)</span></span>
         </label>
       </div>
 
       <div id="credits-line" class="credits-line hidden"></div>
 
       <div class="modal-actions">
-        <button id="btn-save-settings" class="btn-primary">حفظ</button>
-        <button id="btn-test-conn" class="btn-ghost-dark">🔌 اختبار الاتصال</button>
+        <button id="btn-save-settings" class="btn-primary" data-i18n="save">حفظ</button>
+        <button id="btn-test-conn" class="btn-ghost-dark" data-i18n="testConn">🔌 اختبار الاتصال</button>
         <span id="conn-status" class="test-status"></span>
       </div>
     </div>
@@ -170,34 +176,34 @@
   <div id="library-modal" class="modal hidden">
     <div class="modal-card modal-wide">
       <div class="modal-head">
-        <h3>🤖 العملاء والمهارات</h3>
+        <h3 data-i18n="library">🤖 العملاء والمهارات</h3>
         <button id="btn-close-library" class="btn-x">✕</button>
       </div>
-      <p class="modal-note">تُحفظ كملفات في <span dir="ltr">.kunnash/</span> داخل مجلد عملك — تنقلها وتشاركها كما تنقل أي ملف.</p>
+      <p class="modal-note" id="library-note"></p>
 
       <div class="lib-layout">
         <div class="lib-side">
-          <div class="lib-group-title">العملاء الجانبيون</div>
+          <div class="lib-group-title" data-i18n="sideAgents">العملاء الجانبيون</div>
           <div id="lib-agents" class="lib-list"></div>
-          <button class="lib-new" data-type="agent">＋ عميل جديد</button>
+          <button class="lib-new" data-type="agent" data-i18n="newAgent">＋ عميل جديد</button>
 
-          <div class="lib-group-title">المهارات</div>
+          <div class="lib-group-title" data-i18n="skills">المهارات</div>
           <div id="lib-skills" class="lib-list"></div>
-          <button class="lib-new" data-type="skill">＋ مهارة جديدة</button>
+          <button class="lib-new" data-type="skill" data-i18n="newSkill">＋ مهارة جديدة</button>
         </div>
 
         <div class="lib-editor">
-          <div id="lib-editor-empty" class="lib-editor-empty">اختر عنصرًا من القائمة أو أنشئ جديدًا</div>
+          <div id="lib-editor-empty" class="lib-editor-empty" data-i18n="pickOrCreate">اختر عنصرًا من القائمة أو أنشئ جديدًا</div>
           <div id="lib-editor-form" class="hidden">
             <div class="lib-id-row">
-              <label>المعرّف:</label>
+              <label data-i18n="identifier">المعرّف:</label>
               <input id="lib-id" type="text" dir="auto" placeholder="weekly-report" />
               <span id="lib-type-badge" class="lib-badge"></span>
             </div>
             <textarea id="lib-content" dir="auto" spellcheck="false"></textarea>
             <div class="lib-actions">
-              <button id="lib-save" class="btn-primary">حفظ</button>
-              <button id="lib-delete" class="btn-danger">حذف</button>
+              <button id="lib-save" class="btn-primary" data-i18n="save">حفظ</button>
+              <button id="lib-delete" class="btn-danger" data-i18n="delete">حذف</button>
               <span id="lib-status" class="lib-status"></span>
             </div>
           </div>
@@ -211,20 +217,21 @@
     <div class="modal-card perm-card">
       <div class="perm-head">
         <span class="perm-icon">🔐</span>
-        <h3>يطلب كُنّاش إذنك</h3>
+        <h3 data-i18n="permTitle">يطلب كُنّاش إذنك</h3>
       </div>
       <p id="perm-summary" class="perm-summary"></p>
       <pre id="perm-details" class="perm-details"></pre>
       <p id="perm-scope" class="perm-scope"></p>
       <div class="perm-actions">
-        <button id="perm-allow" class="btn-primary">السماح مرة واحدة</button>
-        <button id="perm-always" class="btn-ghost-dark">السماح دائمًا</button>
-        <button id="perm-deny" class="btn-danger">رفض</button>
+        <button id="perm-allow" class="btn-primary" data-i18n="allowOnce">السماح مرة واحدة</button>
+        <button id="perm-always" class="btn-ghost-dark" data-i18n="allowAlways">السماح دائمًا</button>
+        <button id="perm-deny" class="btn-danger" data-i18n="deny">رفض</button>
       </div>
     </div>
   </div>
 
   <script src="vendor/marked.min.js"></script>
+  <script src="i18n.js"></script>
   <script src="bidi.js"></script>
   <script src="app.js"></script>
 </body>

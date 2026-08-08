@@ -99,7 +99,7 @@ function applyWorkspace(info) {
   emptyEl.classList.toggle('hidden', !showChat);
   $('#btn-library').disabled = !has;
   $('#btn-folder').disabled = !has;
-  $('#workspace-name').textContent = has ? workspace.name : 'مجلد العمل';
+  $('#workspace-name').textContent = has ? workspace.name : i18n.t('obWorkspace');
 }
 
 // حالة الاتصال تظهر في موضعين: شريحة في لوحة البداية، ورقاقة النموذج في
@@ -112,16 +112,16 @@ function applyConnection(info) {
   chips.innerHTML = '';
   const c = document.createElement('span');
   c.className = 'chip ' + (ready ? 'chip-on' : 'chip-off');
-  c.textContent = (ready ? '● ' : '○ ') + (connection ? connection.label : 'بلا اتصال');
-  c.title = ready ? connection.model : 'أكمل الاتصال من الإعدادات ⚙️';
+  c.textContent = (ready ? '● ' : '○ ') + (connection ? connection.label : i18n.t('noConnection'));
+  c.title = ready ? connection.model : i18n.t('finishSetupLong');
   chips.appendChild(c);
 
-  modelChipEl.textContent = ready ? connection.model : 'أكمل الاتصال ⚙️';
+  modelChipEl.textContent = ready ? connection.model : i18n.t('finishSetup');
   modelChipEl.classList.toggle('unset', !ready);
 }
 
 function applyGreeting(name) {
-  $('#greeting').textContent = name ? `حيّاك الله يا ${name}` : 'حيّاك الله';
+  $('#greeting').textContent = name ? i18n.t('greetingNamed', { name }) : i18n.t('greeting');
 }
 
 async function afterWorkspaceChange(info) {
@@ -139,10 +139,10 @@ async function afterWorkspaceChange(info) {
 // ثم أول طلب مقترح. الهدف المقاس: من تثبيت نظيف إلى أول مخرَج حقيقي في أقل
 // من خمس دقائق، فكل خطوة تُتخطّى إلا التي لا يعمل التطبيق بدونها.
 const OB_STEPS = [
-  { id: 'name', label: 'اسمك', skippable: true },
-  { id: 'workspace', label: 'مجلد العمل', skippable: false },
-  { id: 'connection', label: 'النموذج', skippable: false },
-  { id: 'pack', label: 'مهاراتك', skippable: true },
+  { id: 'name', label: i18n.t('obName'), skippable: true },
+  { id: 'workspace', label: i18n.t('obWorkspace'), skippable: false },
+  { id: 'connection', label: i18n.t('obModel'), skippable: false },
+  { id: 'pack', label: i18n.t('obSkills'), skippable: true },
 ];
 let obIndex = 0;
 
@@ -168,14 +168,14 @@ async function renderOnboarding() {
   next.classList.remove('hidden');
 
   if (step.id === 'name') {
-    $('#ob-lede').textContent = 'بمَ تحب أن يناديك؟ (يظهر في الترحيب فقط، ويبقى على جهازك)';
+    $('#ob-lede').textContent = i18n.t('obNameLede');
     const input = document.createElement('input');
     input.className = 'ob-input';
-    input.placeholder = 'مثال: نوّاف';
+    input.placeholder = i18n.t('yourNameHint');
     input.value = (await window.kunnash.getProfile()).name || '';
     input.onkeydown = (e) => { if (e.key === 'Enter') next.click(); };
     body.appendChild(input);
-    next.textContent = 'التالي';
+    next.textContent = i18n.t('next');
     next.onclick = async () => {
       await window.kunnash.saveProfile({ name: input.value.trim() });
       applyGreeting(input.value.trim());
@@ -186,7 +186,7 @@ async function renderOnboarding() {
   }
 
   if (step.id === 'workspace') {
-    $('#ob-lede').textContent = 'كُنّاش يشتغل على مجلد تختاره أنت — ملفاتك تبقى مكانها، وهو يقرأ منها ويكتب فيها.';
+    $('#ob-lede').textContent = i18n.t('obWsLede');
     const current = await window.kunnash.getWorkspace();
     if (current) {
       const ok = document.createElement('div');
@@ -196,20 +196,20 @@ async function renderOnboarding() {
     }
     const pick = document.createElement('button');
     pick.className = 'btn-ghost-dark ob-pick';
-    pick.textContent = current ? 'اختر مجلدًا آخر' : '📁 اختر مجلد العمل';
+    pick.textContent = current ? i18n.t('pickAnother') : i18n.t('pickWorkspace');
     pick.onclick = async () => {
       const info = await window.kunnash.chooseWorkspace();
       if (info) { await afterWorkspaceChange(info); renderOnboarding(); }
     };
     body.appendChild(pick);
-    next.textContent = 'التالي';
+    next.textContent = i18n.t('next');
     next.disabled = !current;
     next.onclick = () => { obIndex++; renderOnboarding(); };
     return;
   }
 
   if (step.id === 'connection') {
-    $('#ob-lede').textContent = 'اربط النموذج الذي تريد — بضغطة عبر OpenRouter، أو بمفتاح خدمة تملكها.';
+    $('#ob-lede').textContent = i18n.t('obModelLede');
     const c = await window.kunnash.getConnection();
     const ready = Boolean(c.model && c.hasKey);
     if (ready) {
@@ -220,17 +220,17 @@ async function renderOnboarding() {
     }
     const open = document.createElement('button');
     open.className = 'btn-ghost-dark ob-pick';
-    open.textContent = ready ? 'تعديل الاتصال' : '⚙️ افتح الإعدادات واربط';
+    open.textContent = ready ? i18n.t('editConnection') : i18n.t('openSettingsLink');
     open.onclick = async () => { await openSettings(); };
     body.appendChild(open);
-    next.textContent = 'التالي';
+    next.textContent = i18n.t('next');
     next.disabled = !ready;
     next.onclick = () => { obIndex++; renderOnboarding(); };
     return;
   }
 
   // حزم المهن
-  $('#ob-lede').textContent = 'ابدأ بمهارات جاهزة بدل صفحة فارغة — تُنسخ إلى مجلدك فتصير ملكك، تعدّلها وتحذفها كما تشاء.';
+  $('#ob-lede').textContent = i18n.t('obSkillsLede');
   const packs = await window.kunnash.listPacks();
   const list = document.createElement('div');
   list.className = 'ob-packs';
@@ -240,20 +240,20 @@ async function renderOnboarding() {
     card.innerHTML = '<strong></strong><span></span><i></i>';
     card.querySelector('strong').textContent = p.label;
     card.querySelector('span').textContent = p.description;
-    card.querySelector('i').textContent = `${p.skills.length} مهارات`;
+    card.querySelector('i').textContent = i18n.t('nSkills', { n: p.skills.length });
     card.onclick = async () => {
       const res = await window.kunnash.installPack(p.id);
       card.classList.add('installed');
       card.querySelector('i').textContent = res.installed.length
-        ? `✓ ثُبّتت ${res.installed.length} مهارات`
-        : '✓ مثبّتة سلفًا';
+        ? i18n.t('installedN', { n: res.installed.length })
+        : i18n.t('alreadyInstalled');
       await renderHome();
       populateActivation();
     };
     list.appendChild(card);
   }
   body.appendChild(list);
-  next.textContent = 'ابدأ العمل';
+  next.textContent = i18n.t('startWorking');
   next.disabled = false;
   next.onclick = async () => {
     await window.kunnash.saveProfile({ onboarded: 'true' });
@@ -301,7 +301,7 @@ function addAssistantShell(metaLabel) {
   tools.className = 'tools';
   const bubble = document.createElement('div');
   bubble.className = 'bubble';
-  bubble.innerHTML = '<span class="typing"><span class="dots">يفكّر</span></span>';
+  bubble.innerHTML = `<span class="typing"><span class="dots">${i18n.t('thinking')}</span></span>`;
   div.appendChild(meta);
   div.appendChild(tools);
   div.appendChild(bubble);
@@ -324,7 +324,7 @@ function looksLikeFilePath(text) {
 
 function makeFileClickable(el, rawPath) {
   el.classList.add('file-link');
-  el.title = 'انقر لفتح الملف';
+  el.title = i18n.t('clickToOpen');
   el.onclick = async (e) => {
     e.stopPropagation();
     const res = await window.kunnash.openFile(rawPath.trim());
@@ -380,7 +380,7 @@ function linkifyBubble(bubble) {
 function copyFeedback(btn, text) {
   navigator.clipboard.writeText(text).then(() => {
     const original = btn.textContent;
-    btn.textContent = '✓ نُسخ';
+    btn.textContent = i18n.t('copied');
     btn.classList.add('copied');
     setTimeout(() => { btn.textContent = original; btn.classList.remove('copied'); }, 1400);
   });
@@ -392,8 +392,8 @@ function addCopyControls(msgDiv, rawText) {
   if (!msgDiv || msgDiv.querySelector('.msg-copy')) return;
   const btn = document.createElement('button');
   btn.className = 'msg-copy';
-  btn.textContent = '⧉ نسخ الرد';
-  btn.title = 'نسخ الرد كاملًا';
+  btn.textContent = i18n.t('copyReply');
+  btn.title = i18n.t('copyReplyTitle');
   btn.onclick = () => copyFeedback(btn, rawText);
   msgDiv.appendChild(btn);
 
@@ -413,10 +413,10 @@ function addCopyControls(msgDiv, rawText) {
     const name = document.createElement('span');
     name.className = 'lang bidi-isolate';
     name.setAttribute('dir', 'ltr');
-    name.textContent = lang || 'نص';
+    name.textContent = lang || i18n.t('plainText');
     const b = document.createElement('button');
     b.className = 'block-copy';
-    b.textContent = '⧉ نسخ';
+    b.textContent = i18n.t('copy');
     b.onclick = (e) => { e.stopPropagation(); copyFeedback(b, content); };
     cap.appendChild(name);
     cap.appendChild(b);
@@ -434,8 +434,8 @@ function addCopyControls(msgDiv, rawText) {
     block.classList.add('copyable');
     const b = document.createElement('button');
     b.className = 'block-copy';
-    b.textContent = '⧉ نسخ';
-    b.title = block.tagName === 'BLOCKQUOTE' ? 'نسخ المسودة وحدها' : 'نسخ هذه الكتلة';
+    b.textContent = i18n.t('copy');
+    b.title = i18n.t(block.tagName === 'BLOCKQUOTE' ? 'copyDraft' : 'copyBlock');
     b.onclick = (e) => { e.stopPropagation(); copyFeedback(b, content); };
     block.appendChild(b);
   }
@@ -450,7 +450,7 @@ function addError(message, retryPayload) {
   if (retryPayload) {
     const btn = document.createElement('button');
     btn.className = 'btn-retry';
-    btn.textContent = '↻ إعادة المحاولة';
+    btn.textContent = i18n.t('retry');
     btn.onclick = () => { div.remove(); dispatch({ ...retryPayload, retry: true }); };
     div.appendChild(btn);
   }
@@ -464,12 +464,12 @@ function toolLabel(name, input) {
   const file = input && (input.path || input.pattern || input.query || input.url || '');
   const short = typeof file === 'string' ? file.split('/').pop().slice(0, 40) : '';
   const map = {
-    read_file: '📖 يقرأ', list_files: '🔍 يبحث عن ملفات', search_files: '🔍 يبحث في المحتوى',
-    write_file: '✏️ يكتب ملفًا', edit_file: '✏️ يعدّل', delete_file: '🗑️ ينقل إلى المهملات',
-    read_excel: '📊 يقرأ جدول Excel', read_document: '📄 يقرأ مستندًا',
-    render_document: '🖨️ يُخرج مستندًا', fetch_url: '🌐 يفتح رابطًا',
-    todo_write: '📋 ينظّم المهام', run_agent: '🤖 يشغّل عميلًا جانبيًا',
-    list_skills: '⚡ يستعرض المهارات', read_skill: '⚡ يقرأ مهارة',
+    read_file: i18n.t('tRead'), list_files: i18n.t('tList'), search_files: i18n.t('tSearch'),
+    write_file: i18n.t('tWrite'), edit_file: i18n.t('tEdit'), delete_file: i18n.t('tTrash'),
+    read_excel: i18n.t('tExcel'), read_document: i18n.t('tDoc'),
+    render_document: i18n.t('tRender'), fetch_url: i18n.t('tFetch'),
+    todo_write: i18n.t('tTodo'), run_agent: i18n.t('tAgent'),
+    list_skills: i18n.t('tSkills'), read_skill: i18n.t('tSkill'),
   };
   if (map[name]) return map[name] + (short ? ': ' + short : '');
   return '🔧 ' + name + (short ? ': ' + short : '');
@@ -485,11 +485,11 @@ async function refreshSessions() {
     const title = document.createElement('span');
     title.className = 's-title';
     title.textContent = s.title;
-    title.title = `${s.model || 'بلا نموذج'} · ${s.count} رسالة`;
+    title.title = `${s.model || i18n.t('noModelShort')} · ${s.count} رسالة`;
     const del = document.createElement('button');
     del.className = 's-del';
     del.textContent = '✕';
-    del.title = 'حذف المحادثة';
+    del.title = i18n.t('deleteChat');
     del.onclick = async (e) => {
       e.stopPropagation();
       await window.kunnash.deleteSession(s.id);
@@ -502,7 +502,7 @@ async function refreshSessions() {
       const dot = document.createElement('span');
       dot.className = 's-run';
       dot.textContent = '●';
-      dot.title = 'هذه المحادثة تعمل الآن';
+      dot.title = i18n.t('running');
       item.appendChild(dot);
     }
     item.appendChild(del);
@@ -537,7 +537,7 @@ async function openSession(id) {
     // محادثة توقفت قبل اكتمال الرد؟ اعرض إعادة المحاولة بدل إعادة الكتابة
     const last = s.messages[s.messages.length - 1];
     if (last && last.role === 'user') {
-      addError('هذه المحادثة توقفت قبل اكتمال الرد.', {
+      addError(i18n.t('stopped'), {
         text: last.text,
         attachments: [],
       });
@@ -614,7 +614,7 @@ function notifyDone(run, finalText) {
   soundDone();
   window.kunnash.notify({
     kind: 'done',
-    title: shorten(run.payload.text, 48) || 'انتهت المهمة',
+    title: shorten(run.payload.text, 48) || i18n.t('taskDone'),
     body: shorten(finalText, 160),
     sessionId: run.sessionId,
   });
@@ -624,7 +624,7 @@ function notifyError(run, message) {
   soundAttention();
   window.kunnash.notify({
     kind: 'error',
-    title: 'توقفت المهمة',
+    title: i18n.t('taskStopped'),
     body: shorten(message, 160),
     sessionId: run.sessionId,
   });
@@ -646,7 +646,7 @@ function showNextPermission() {
   if (permCurrentId || permQueue.length === 0) return;
   const req = permQueue.shift();
   permCurrentId = req.id;
-  permSummaryEl.textContent = req.title || req.summary || `طلب استخدام أداة ${req.toolName}`;
+  permSummaryEl.textContent = req.title || req.summary || i18n.t('toolRequest', { tool: req.toolName });
   let details = '';
   if (req.reason) details += req.reason + '\n';
   try {
@@ -660,10 +660,10 @@ function showNextPermission() {
   // ما ستحفظه «دائمًا» بالضبط — فلا يوقّع المستخدم على بياض
   const scopeEl = $('#perm-scope');
   if (req.alwaysScope) {
-    scopeEl.textContent = `«السماح دائمًا» يحفظ قاعدة: ${req.alwaysScope}`;
+    scopeEl.textContent = i18n.t('alwaysSaves', { scope: req.alwaysScope });
     scopeEl.classList.remove('hidden');
   } else {
-    scopeEl.textContent = '«السماح دائمًا» لهذا التشغيل وحده';
+    scopeEl.textContent = i18n.t('permThisRunOnly');
     scopeEl.classList.remove('hidden');
   }
   permModal.classList.remove('hidden');
@@ -683,8 +683,8 @@ window.kunnash.onPermissionRequest((req) => {
   soundAttention();
   window.kunnash.notify({
     kind: 'permission',
-    title: 'يحتاج إذنك للمتابعة',
-    body: shorten(req.title || req.summary || `أداة ${req.toolName}`, 160),
+    title: i18n.t('needsPermission'),
+    body: shorten(req.title || req.summary || i18n.t('toolNamed', { tool: req.toolName }), 160),
   });
   showNextPermission();
 });
@@ -717,7 +717,7 @@ window.kunnash.onAskRequest((req) => {
     cb.type = 'checkbox';
     cb.onchange = () => { remember = cb.checked; };
     const txt = document.createElement('span');
-    txt.textContent = `احفظ اختياري لـ«${req.rememberKey}» فلا تسألني مرة أخرى`;
+    txt.textContent = i18n.t('rememberMy', { key: req.rememberKey });
     rememberRow.appendChild(cb);
     rememberRow.appendChild(txt);
   }
@@ -731,7 +731,7 @@ window.kunnash.onAskRequest((req) => {
     if (rememberRow) rememberRow.remove();
     const chosen = document.createElement('div');
     chosen.className = 'ask-chosen';
-    chosen.textContent = value ? `✓ ${value}${remember ? ' · محفوظ' : ''}` : '✕ بلا اختيار';
+    chosen.textContent = value ? `✓ ${value}${remember ? i18n.t('savedMark') : ''}` : i18n.t('noChoice');
     card.appendChild(chosen);
   };
   for (const o of req.options) {
@@ -743,7 +743,7 @@ window.kunnash.onAskRequest((req) => {
   }
   const skip = document.createElement('button');
   skip.className = 'ask-skip';
-  skip.textContent = 'اختر أنت';
+  skip.textContent = i18n.t('yourChoice');
   skip.onclick = () => answer(null);
   opts.appendChild(skip);
 
@@ -763,7 +763,7 @@ function renderAttachList() {
   pendingFiles.forEach((f, i) => {
     const chip = document.createElement('span');
     chip.className = 'attach-chip';
-    chip.innerHTML = '📎 <span class="a-name"></span><button class="a-x" title="إزالة">✕</button>';
+    chip.innerHTML = `📎 <span class="a-name"></span><button class="a-x" title="${i18n.t('remove')}">✕</button>`;
     chip.querySelector('.a-name').textContent = f.name;
     chip.querySelector('.a-x').onclick = () => { pendingFiles.splice(i, 1); renderAttachList(); };
     attachListEl.appendChild(chip);
@@ -809,9 +809,9 @@ async function populateActivation() {
   let lib;
   try { lib = await window.kunnash.libraryList(); } catch { return; }
   const current = activationEl.value;
-  activationEl.innerHTML = '<option value="">تفعيل تلقائي</option>';
+  activationEl.innerHTML = `<option value="">${i18n.t('autoTrigger')}</option>`;
   const gSkills = document.createElement('optgroup');
-  gSkills.label = 'تفعيل مهارة';
+  gSkills.label = i18n.t('triggerSkill');
   for (const s of lib.skills) {
     const o = document.createElement('option');
     o.value = 'skill|' + s.id;
@@ -819,7 +819,7 @@ async function populateActivation() {
     gSkills.appendChild(o);
   }
   const gAgents = document.createElement('optgroup');
-  gAgents.label = 'تكليف عميل';
+  gAgents.label = i18n.t('assignAgent');
   for (const a of lib.agents) {
     const o = document.createElement('option');
     o.value = 'agent|' + a.id;
@@ -836,11 +836,13 @@ async function populateActivation() {
 function timeAgo(ms) {
   const diff = Date.now() - ms;
   const h = diff / 3600000;
-  if (h < 1) return 'قبل دقائق';
-  if (h < 24) return 'قبل ' + Math.round(h) + ' ساعة';
+  // العربية تصرّف العدد؛ فالمفرد نصٌّ مستقل لا «1 ساعة»
+  if (h < 1) return i18n.t('minutesAgo');
+  const hh = Math.round(h);
+  if (h < 24) return hh === 1 ? i18n.t('hourAgo') : i18n.t('hoursAgo', { n: hh });
   const d = Math.round(h / 24);
-  if (d === 1) return 'أمس';
-  return 'قبل ' + d + ' يوم';
+  if (d === 1) return i18n.t('yesterday');
+  return i18n.t('daysAgo', { n: d });
 }
 
 async function renderHome() {
@@ -863,7 +865,7 @@ async function renderHome() {
     b.onclick = () => runSkill(s);
     skillsEl.appendChild(b);
   }
-  if (!data.skills.length) skillsEl.innerHTML = '<div class="home-empty">أنشئ مهاراتك من «🤖 العملاء والمهارات»</div>';
+  if (!data.skills.length) skillsEl.innerHTML = `<div class="home-empty">${i18n.t('noSkillsYet')}</div>`;
 
   // آخر الملفات
   const filesEl = $('#home-files');
@@ -871,13 +873,13 @@ async function renderHome() {
   for (const f of data.recentFiles) {
     const row = document.createElement('div');
     row.className = 'home-item home-file';
-    row.innerHTML = '<div class="home-file-main"><strong></strong><span class="home-item-sub"></span></div><button class="home-open" title="فتح الملف">↗</button>';
+    row.innerHTML = `<div class="home-file-main"><strong></strong><span class="home-item-sub"></span></div><button class="home-open" title="${i18n.t('openFile')}">↗</button>`;
     row.querySelector('strong').textContent = f.name;
     row.querySelector('.home-item-sub').textContent = timeAgo(f.mtime) + (f.rel.includes('/') ? ' · ' + f.rel.split('/').slice(0, -1).join('/') : '');
     row.querySelector('.home-file-main').onclick = () => {
       // يُرفق الملف نفسه لا مساره: النموذج في هذه المرحلة يرى المرفقات فقط
       addAttachments([workspace.path + '/' + f.rel]);
-      if (!inputEl.value.trim()) inputEl.value = 'لخّص لي أهم ما في الملف المرفق.';
+      if (!inputEl.value.trim()) inputEl.value = i18n.t('summarizeFile');
       autoGrow(); inputEl.focus();
     };
     row.querySelector('.home-open').onclick = async (e) => {
@@ -901,7 +903,7 @@ function runSkill(skill) {
   newChat();
   // sendText يلتقط قيمة التفعيل في أول سطر متزامن — فالضبط بعدها فورًا آمن
   activationEl.value = 'skill|' + skill.id;
-  const run = sendText('نفّذ هذه المهارة الآن.');
+  const run = sendText(i18n.t('runThisSkill'));
   activationEl.value = '';
   activationEl.classList.remove('armed');
   return run;
@@ -926,7 +928,7 @@ async function sendText(text) {
   if (act) {
     const [kind, id] = act.split('|');
     if (kind === 'skill') skillId = id;
-    else text = 'كلّف العميل الجانبي «' + id + '» بالطلب التالي وقدّم لي نتيجته:\n\n' + text;
+    else text = i18n.t('assignAgentReq', { id }) + text;
   }
 
   const attachments = pendingFiles.map((f) => f.path);
@@ -965,11 +967,11 @@ function updateRunStatus() {
   }
   $('#run-status-text').textContent = run.tools.length
     ? run.tools[run.tools.length - 1]
-    : 'يفكّر…';
+    : i18n.t('thinkingDots');
   const tick = () => {
     const secs = Math.floor((Date.now() - run.startedAt) / 1000);
     $('#run-status-time').textContent = secs < 60
-      ? `${secs} ث`
+      ? i18n.t('seconds', { n: secs })
       : `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
   };
   tick();
@@ -979,7 +981,7 @@ function updateRunStatus() {
 function updateSendState() {
   const run = runForCurrentView();
   sendBtn.disabled = false;
-  sendBtn.textContent = run ? '⏹ إيقاف' : 'إرسال';
+  sendBtn.textContent = run ? i18n.t('stop') : i18n.t('send');
   sendBtn.classList.toggle('btn-stop', Boolean(run));
   updateRunStatus();
 }
@@ -1059,7 +1061,7 @@ window.kunnash.onChatEvent('chat:skill', ({ requestId, id }) => {
   if (!run || !run.els) return;
   const chip = document.createElement('span');
   chip.className = 'tool-chip skill-chip';
-  chip.textContent = '⚡ فُعّلت المهارة: ' + id;
+  chip.textContent = i18n.t('skillFired') + id;
   run.els.tools.appendChild(chip);
   scrollDown();
 });
@@ -1091,8 +1093,8 @@ window.kunnash.onChatEvent('chat:done', ({ requestId, text, usage }) => {
     if (usage && (usage.calls || usage.cost)) {
       const meta = run.els.bubble.closest('.msg').querySelector('.meta');
       const bits = [];
-      if (usage.calls) bits.push(`${usage.calls} أداة`);
-      if (usage.tokens) bits.push(`${(usage.tokens / 1000).toFixed(1)}ك رمز`);
+      if (usage.calls) bits.push(i18n.t('nTools', { n: usage.calls }));
+      if (usage.tokens) bits.push(i18n.t('nTokens', { n: (usage.tokens / 1000).toFixed(1) }));
       if (usage.cost) bits.push(`$${usage.cost.toFixed(3)}`);
       meta.textContent += (meta.textContent ? ' · ' : '') + bits.join(' · ');
     }
@@ -1163,8 +1165,8 @@ function applyPreset(p) {
   $('#conn-model').value = saved.model || p.exampleModel || '';
   $('#conn-key').value = '';
   $('#conn-key').placeholder = saved.hasKey
-    ? '•••••••• محفوظ لهذه الخدمة — اتركه فارغًا لإبقائه'
-    : (p.needsKey ? 'sk-...' : 'لا يحتاج مفتاحًا');
+    ? i18n.t('keyStoredSvc')
+    : (p.needsKey ? 'sk-...' : i18n.t('noKeyNeeded'));
 
   allModels = [];
   modelListEl.innerHTML = '';
@@ -1203,8 +1205,8 @@ function renderModelList() {
     modelListEl.appendChild(o);
   }
   $('#model-count').textContent = q
-    ? `${shown.length} من ${allModels.length}`
-    : `${allModels.length} نموذجًا`;
+    ? i18n.t('nOfM', { n: shown.length, m: allModels.length })
+    : i18n.t('nModels', { n: allModels.length });
 }
 
 async function refreshModels() {
@@ -1212,7 +1214,7 @@ async function refreshModels() {
   btn.disabled = true; btn.textContent = '…';
   await saveSettings(true);   // القائمة تُجلب من العنوان المكتوب فعلًا
   const res = await window.kunnash.listModels();
-  btn.disabled = false; btn.textContent = '↻ القائمة';
+  btn.disabled = false; btn.textContent = i18n.t('refreshModels');
   connStatusEl.className = 'test-status';
   if (!res.ok) {
     connStatusEl.classList.add('fail');
@@ -1231,8 +1233,8 @@ async function refreshCredits() {
   if (!c.ok || !c.credits) return;
   const { usage, remaining } = c.credits;
   const parts = [];
-  if (usage != null) parts.push(`استُهلك $${Number(usage).toFixed(2)}`);
-  parts.push(remaining == null ? 'بلا حد للرصيد' : `المتبقي $${Number(remaining).toFixed(2)}`);
+  if (usage != null) parts.push(i18n.t('spent', { n: Number(usage).toFixed(2) }));
+  parts.push(remaining == null ? i18n.t('noCreditLimit') : i18n.t('remaining', { n: Number(remaining).toFixed(2) }));
   creditsLineEl.textContent = '💳 ' + parts.join(' · ');
 }
 
@@ -1242,7 +1244,7 @@ async function renderPrefs() {
   const items = await window.kunnash.listPrefs();
   box.innerHTML = '';
   if (!items.length) {
-    box.innerHTML = '<div class="prefs-empty">لا شيء بعد — حين يسألك كُنّاش ويعرض «احفظ اختياري» يظهر هنا.</div>';
+    box.innerHTML = `<div class="prefs-empty">${i18n.t('noPrefsYet')}</div>`;
     return;
   }
   for (const it of items) {
@@ -1255,7 +1257,7 @@ async function renderPrefs() {
     const del = document.createElement('button');
     del.className = 'pref-del';
     del.textContent = '✕';
-    del.title = 'انسَ هذا';
+    del.title = i18n.t('forgetThis');
     del.onclick = async () => { await window.kunnash.forgetPref(it.key); renderPrefs(); };
     row.appendChild(txt);
     row.appendChild(del);
@@ -1268,7 +1270,7 @@ async function renderRules() {
   const rules = await window.kunnash.listRules();
   box.innerHTML = '';
   if (!rules.length) {
-    box.innerHTML = '<div class="prefs-empty">لا قواعد — كل إجراء مؤثّر يسألك.</div>';
+    box.innerHTML = `<div class="prefs-empty">${i18n.t('noRulesYet')}</div>`;
     return;
   }
   for (const r of rules) {
@@ -1280,12 +1282,12 @@ async function renderRules() {
     txt.querySelector('span').textContent = r.scope;
     if (r.expiresAt) {
       const days = Math.max(0, Math.ceil((r.expiresAt - Date.now()) / 86400000));
-      txt.querySelector('i').textContent = ` — تنتهي بعد ${days} يومًا`;
+      txt.querySelector('i').textContent = i18n.t('expiresIn', { n: days });
     }
     const del = document.createElement('button');
     del.className = 'pref-del';
     del.textContent = '✕';
-    del.title = 'اسحب هذا الإذن';
+    del.title = i18n.t('revokeRule');
     del.onclick = async () => { await window.kunnash.revokeRule(r.tool, r.scope); renderRules(); };
     row.appendChild(txt);
     row.appendChild(del);
@@ -1306,6 +1308,7 @@ async function openSettings() {
   renderRules();
   const prof = await window.kunnash.getProfile();
   $('#profile-name').value = prof.name || '';
+  $('#ui-lang').value = i18n.getLang();
 
   const c = await window.kunnash.getConnection();
   connServices = c.services || {};
@@ -1315,7 +1318,7 @@ async function openSettings() {
   $('#conn-data-policy').checked = (c.dataPolicy || 'deny') !== 'allow';
   // المفتاح لا يعبر الجسر — الحقل فارغ، ونائبه يخبر أنه محفوظ
   $('#conn-key').value = '';
-  $('#conn-key').placeholder = c.hasKey ? '•••••••• محفوظ — اترك الحقل فارغًا لإبقائه' : 'sk-...';
+  $('#conn-key').placeholder = c.hasKey ? i18n.t('keyStored') : 'sk-...';
   connStatusEl.className = 'test-status';
   connStatusEl.textContent = '';
   $('#or-link-status').textContent = '';
@@ -1340,7 +1343,14 @@ function connectionPatch() {
 }
 
 async function saveSettings(keepOpen) {
-  await window.kunnash.saveProfile({ name: $('#profile-name').value.trim() });
+  const lang = $('#ui-lang').value;
+  await window.kunnash.saveProfile({ name: $('#profile-name').value.trim(), lang });
+  if (lang !== i18n.getLang()) {
+    i18n.setLang(lang);
+    // ما رُسم بجافاسكربت (التحية، الجلسات، اللوحة) لا يحمل data-i18n فيُعاد رسمه
+    applyGreeting($('#profile-name').value.trim());
+    renderHome();
+  }
   await window.kunnash.saveConnection(connectionPatch());
   const c = await window.kunnash.getConnection();
   connServices = c.services || {};
@@ -1354,24 +1364,24 @@ async function saveSettings(keepOpen) {
 
 async function testConnection() {
   connStatusEl.className = 'test-status';
-  connStatusEl.textContent = 'يجرّب الاتصال…';
+  connStatusEl.textContent = i18n.t('testing');
   await saveSettings(true);   // نختبر ما هو مكتوب فعلًا لا ما كان محفوظًا
   const res = await window.kunnash.testConnection();
-  if (res.ok) { connStatusEl.classList.add('ok'); connStatusEl.textContent = '✅ يعمل — رد النموذج: ' + res.reply; }
+  if (res.ok) { connStatusEl.classList.add('ok'); connStatusEl.textContent = i18n.t('connWorks') + res.reply; }
   else { connStatusEl.classList.add('fail'); connStatusEl.textContent = '⛔ ' + res.error; }
 }
 
 async function linkOpenRouterFlow() {
   const st = $('#or-link-status');
   st.className = 'test-status';
-  st.textContent = 'فُتح المتصفح — أكمل الموافقة هناك…';
+  st.textContent = i18n.t('browserOpened');
   await saveSettings(true);   // نثبت العنوان قبل الربط
   const res = await window.kunnash.linkOpenRouter();
   if (res.ok) {
     st.classList.add('ok');
-    st.textContent = '✅ تم الربط وحُفظ المفتاح';
+    st.textContent = i18n.t('linked');
     $('#conn-key').value = '';
-    $('#conn-key').placeholder = '•••••••• محفوظ — اترك الحقل فارغًا لإبقائه';
+    $('#conn-key').placeholder = i18n.t('keyStored');
     await saveSettings(true);
     refreshCredits();
   } else {
@@ -1393,7 +1403,7 @@ const libBadgeEl = $('#lib-type-badge');
 
 let libCurrent = null; // { type, id, isNew }
 
-const TYPE_LABELS = { agent: 'عميل جانبي', skill: 'مهارة' };
+const TYPE_LABELS = { agent: i18n.t('sideAgent'), skill: i18n.t('skill') };
 
 async function refreshLibrary() {
   const { agents, skills } = await window.kunnash.libraryList();
@@ -1431,7 +1441,7 @@ async function newLibItem(type) {
   libIdEl.value = '';
   libIdEl.disabled = false;
   libContentEl.value = await window.kunnash.libraryTemplate(type, 'new-item');
-  libBadgeEl.textContent = TYPE_LABELS[type] + ' — جديد';
+  libBadgeEl.textContent = TYPE_LABELS[type] + i18n.t('newSession');
   libStatusEl.textContent = '';
   libEmpty.classList.add('hidden');
   libForm.classList.remove('hidden');
@@ -1445,14 +1455,14 @@ async function saveLibItem() {
   libStatusEl.textContent = '';
   libStatusEl.classList.remove('fail');
   try {
-    if (!id) throw new Error('اكتب المعرّف أولًا — هو اسم مجلد المهارة (مثل: weekly-report أو «تقرير-الأسبوع»)');
+    if (!id) throw new Error(i18n.t('idFirst'));
     let content = libContentEl.value;
     if (libCurrent.isNew) content = content.replace(/^name: .*$/m, 'name: ' + id);
     await window.kunnash.librarySave(libCurrent.type, id, content);
     libCurrent = { type: libCurrent.type, id, isNew: false };
     libIdEl.disabled = true;
     libContentEl.value = content;
-    libStatusEl.textContent = '✅ حُفظ';
+    libStatusEl.textContent = i18n.t('saved');
     refreshLibrary();
     populateActivation();
     renderHome();
@@ -1464,7 +1474,7 @@ async function saveLibItem() {
 
 async function deleteLibItem() {
   if (!libCurrent || libCurrent.isNew) { closeLibEditor(); return; }
-  const yes = confirm(`متأكد من حذف «${libCurrent.id}»؟ سيُحذف الملف من .kunnash نهائيًا.`);
+  const yes = confirm(i18n.t('confirmDelete', { id: libCurrent.id }));
   if (!yes) return;
   await window.kunnash.libraryDelete(libCurrent.type, libCurrent.id);
   closeLibEditor();
@@ -1517,7 +1527,7 @@ async function showWorkspaceMenu() {
     row.className = 'ws-item' + (w.current ? ' current' : '') + (w.missing ? ' missing' : '');
     row.innerHTML = '<strong></strong><span></span>';
     row.querySelector('strong').textContent = (w.current ? '● ' : '') + w.name;
-    row.querySelector('span').textContent = w.missing ? 'غير موجود على القرص' : w.path;
+    row.querySelector('span').textContent = w.missing ? i18n.t('missingOnDisk') : w.path;
     row.onclick = async () => {
       menu.remove();
       if (w.current || w.missing) return;
@@ -1527,7 +1537,7 @@ async function showWorkspaceMenu() {
   }
   const add = document.createElement('button');
   add.className = 'ws-item ws-add';
-  add.textContent = '＋ افتح مجلدًا آخر';
+  add.textContent = i18n.t('openAnother');
   add.onclick = async () => {
     menu.remove();
     const info = await window.kunnash.chooseWorkspace();
@@ -1540,7 +1550,23 @@ async function showWorkspaceMenu() {
     document.removeEventListener('click', once);
   }, { once: true }), 0);
 }
-$('#btn-library').onclick = () => { refreshLibrary(); closeLibEditor(); libraryModal.classList.remove('hidden'); };
+// «‎.kunnash/‎» مسارٌ لاتيني داخل جملة عربية: يُبنى عنصرًا معزولًا لا نصًّا
+// واحدًا، وإلا التصقت النقطة والشرطة المائلة بالجار الخطأ.
+function renderLibraryNote() {
+  const el = $('#library-note');
+  if (!el) return;
+  const [before, after] = i18n.t('libraryNote').split('{dir}');
+  const dir = document.createElement('code');
+  dir.textContent = '.kunnash/';
+  dir.setAttribute('dir', 'ltr');
+  dir.className = 'bidi-isolate';
+  el.replaceChildren(document.createTextNode(before), dir, document.createTextNode(after || ''));
+}
+
+$('#btn-library').onclick = () => {
+  renderLibraryNote(); refreshLibrary(); closeLibEditor();
+  libraryModal.classList.remove('hidden');
+};
 $('#btn-close-library').onclick = () => libraryModal.classList.add('hidden');
 libraryModal.addEventListener('click', (e) => { if (e.target === libraryModal) libraryModal.classList.add('hidden'); });
 document.querySelectorAll('.lib-new').forEach((b) => { b.onclick = () => newLibItem(b.dataset.type); });
@@ -1568,6 +1594,8 @@ activationEl.addEventListener('change', () => {
 // البداية
 (async () => {
   const prof = await window.kunnash.getProfile();
+  // اللغة قبل كل رسم: تبديلها يقلب اتجاه الواجهة كلها، ورسمُها مرتين ارتجاف
+  i18n.setLang(prof.lang || 'ar');
   applyGreeting(prof.name);
   const wsInfo = await window.kunnash.getWorkspace();
   // أول تشغيل: بلا مساحة عمل، أو لم يُكمل الجولة التعريفية بعد

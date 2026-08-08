@@ -149,7 +149,7 @@ html, body {
   color: var(--line);
   font-family: inherit;
   font-size: 13px;
-  text-align: right;
+  text-align: start;
   padding: 8px 10px;
   border-radius: 8px;
   cursor: pointer;
@@ -378,7 +378,8 @@ html, body {
   border: 1px solid var(--line); border-radius: 10px; background: var(--bg);
 }
 .model-picker-box select {
-  font-family: inherit; font-size: 12.5px; direction: ltr; text-align: left;
+  /* الحقل نفسه ltr (أسماء النماذج لاتينية)، فـstart فيه = اليسار */
+  font-family: inherit; font-size: 12.5px; direction: ltr; text-align: start;
   border: 1px solid var(--line); border-radius: 8px;
   background: var(--surface); color: var(--ink); padding: 4px;
 }
@@ -427,7 +428,7 @@ html, body {
 .chip-on { color: var(--ok); background: var(--ok-wash); border-color: var(--ok-line); }
 .chip-off { color: var(--muted); background: var(--surface); }
 
-.home-grid { display: grid; grid-template-columns: 1fr 1.15fr; gap: 10px; text-align: right; margin-bottom: 12px; }
+.home-grid { display: grid; grid-template-columns: 1fr 1.15fr; gap: 10px; text-align: start; margin-bottom: 12px; }
 .home-card {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -435,12 +436,12 @@ html, body {
   padding: 10px 12px;
 }
 .home-card h3 { font-size: 12.5px; margin-bottom: 6px; }
-.home-card-hint { font-size: 10px; color: var(--muted); font-weight: 400; margin-right: 5px; }
+.home-card-hint { font-size: 10px; color: var(--muted); font-weight: 400; margin-inline-end: 5px; }
 .home-list { display: flex; flex-direction: column; gap: 2px; }
 .home-item {
   display: block;
   width: 100%;
-  text-align: right;
+  text-align: start;
   background: none;
   border: 1px solid transparent;
   border-radius: 8px;
@@ -499,7 +500,7 @@ html, body {
 .msg-copy {
   position: absolute;
   top: -2px;
-  left: 4px;
+  inset-inline-end: 4px;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 7px;
@@ -516,7 +517,7 @@ html, body {
 .pre-copy {
   position: absolute;
   top: 5px;
-  left: 6px;
+  inset-inline-end: 6px;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 6px;
@@ -682,7 +683,7 @@ html, body {
   width: 28px; height: 28px;
   cursor: pointer;
   font-family: inherit;
-  margin-left: 4px;
+  margin-inline-start: 4px;
 }
 .btn-attach:hover { color: var(--accent-strong); border-color: var(--accent-soft); background: var(--accent-wash); }
 
@@ -770,7 +771,7 @@ html, body {
 .modal-head h3 { font-size: 17px; }
 .btn-x { background: none; border: none; font-size: 15px; cursor: pointer; color: var(--muted); }
 .modal-note { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
-.modal-actions { text-align: left; margin-top: 6px; }
+.modal-actions { text-align: end; margin-top: 6px; }
 
 /* ---------- مربع طلب الإذن ---------- */
 .perm-card { width: min(480px, 92vw); }
@@ -834,11 +835,11 @@ html, body {
 /* ---------- مكتبة العملاء والمهارات ---------- */
 .modal-wide { width: min(860px, 94vw); }
 .lib-layout { display: grid; grid-template-columns: 240px 1fr; gap: 14px; min-height: 420px; }
-.lib-side { border-left: 1px solid var(--line); padding-left: 12px; overflow-y: auto; max-height: 60vh; }
+.lib-side { border-inline-end: 1px solid var(--line); padding-inline-end: 12px; overflow-y: auto; max-height: 60vh; }
 .lib-group-title { font-size: 12px; font-weight: 600; color: var(--muted); margin: 10px 0 6px; }
 .lib-list { display: flex; flex-direction: column; gap: 3px; }
 .lib-item {
-  text-align: right;
+  text-align: start;
   background: none;
   border: 1px solid transparent;
   border-radius: 8px;
@@ -870,7 +871,7 @@ html, body {
 #lib-id {
   font-family: inherit; font-size: 13px; padding: 6px 10px;
   border: 1px solid var(--line); border-radius: 8px; background: var(--surface);
-  width: 220px; text-align: left;
+  width: 220px; text-align: start;
 }
 #lib-id:disabled { background: var(--bg); color: var(--muted); }
 .lib-badge {
