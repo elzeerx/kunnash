@@ -46,6 +46,22 @@ function createWindow() {
 
 app.setName(APP_NAME);
 
+// نسخة واحدة لا غير.
+// نسختان تتنازعان **مجلد بيانات واحد**: قفل ملفّ الإعدادات وملفّ تعريف
+// Chromium نفسه. فتفشل الثانية في تهيئة عملية العرض وتظهر **نافذة بيضاء**
+// بلا خطأ ولا انهيار — عطبٌ صامت لا يفهم المستخدم سببه، ويظنّ التطبيق
+// معطوبًا. فالثانية تُغلق نفسها وتُظهر الأولى بدل أن تزاحمها.
+if (!app.requestSingleInstanceLock()) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    if (!win) return createWindow();
+    if (win.isMinimized()) win.restore();
+    win.show();
+    win.focus();
+  });
+}
+
 app.whenReady().then(() => {
   // المفتاح يُشفَّر بـsafeStorage (Keychain بهوية التطبيق) حيثما أتاحه النظام
   const crypto = safeStorage.isEncryptionAvailable()
