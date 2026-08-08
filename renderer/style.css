@@ -659,9 +659,9 @@ html, body {
   flex-direction: column;
   gap: 6px;
   background: var(--surface);
-  border: 1.5px solid var(--line);
-  border-radius: 16px;
-  padding: 12px 14px 8px;
+  border: 1px solid var(--line);
+  border-radius: 18px;          /* انحناء بطاقات الرسائل نفسه */
+  padding: 18px 20px 14px;
   transition: border-color .15s;
 }
 .composer:focus-within { border-color: var(--accent-soft); }
@@ -670,8 +670,8 @@ html, body {
   border: none;
   resize: none;
   font-family: inherit;
-  font-size: 14.5px;
-  line-height: 1.7;
+  font-size: 15px;
+  line-height: 1.75;
   max-height: 180px;
   outline: none;
   background: transparent;
@@ -681,9 +681,10 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 10px;
+  margin-top: 4px;
 }
-.composer-selects { display: flex; align-items: center; gap: 2px; }
+.composer-selects { display: flex; align-items: center; gap: 6px; }
 .btn-attach {
   background: none;
   border: 1px solid var(--line);
@@ -691,10 +692,10 @@ html, body {
   color: var(--muted);
   font-size: 16px;
   line-height: 1;
-  width: 28px; height: 28px;
+  width: 32px; height: 32px;
+  border-radius: 10px;
   cursor: pointer;
   font-family: inherit;
-  margin-inline-start: 4px;
 }
 .btn-attach:hover { color: var(--accent-strong); border-color: var(--accent-soft); background: var(--accent-wash); }
 
@@ -746,10 +747,10 @@ html, body {
   background: var(--accent);
   color: var(--on-accent);
   border: none;
-  border-radius: 9px;
-  padding: 7px 18px;
+  border-radius: 11px;
+  padding: 10px 26px;
   font-family: inherit;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
 }
@@ -757,9 +758,9 @@ html, body {
 .btn-send:disabled { background: var(--accent-soft); cursor: wait; }
 .composer-hint {
   text-align: center;
-  font-size: 11px;
+  font-size: 11.5px;
   color: var(--muted);
-  margin-top: 8px;
+  margin-top: 12px;
 }
 
 /* ---------- نافذة الإعدادات ---------- */
