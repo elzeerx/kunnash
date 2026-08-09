@@ -212,6 +212,22 @@
     </div>
   </div>
 
+  <!-- منتقي النموذج — يُفتح من رقاقة صندوق الكتابة -->
+  <div id="pick-model-modal" class="modal hidden">
+    <div class="modal-card pick-card">
+      <div class="modal-head">
+        <h3 data-i18n="pickModel">اختر النموذج</h3>
+        <button id="pick-close" class="btn-x">✕</button>
+      </div>
+      <input id="pick-filter" type="text" data-i18n-placeholder="searchModels" />
+      <div id="pick-list" class="pick-list"></div>
+      <p id="pick-empty" class="modal-note hidden" data-i18n="pickEmpty"></p>
+      <div class="modal-actions">
+        <button id="pick-settings" class="btn-ghost-dark" data-i18n="pickManage">إدارة الاتصال والقائمة</button>
+      </div>
+    </div>
+  </div>
+
   <!-- مربع طلب الإذن -->
   <div id="permission-modal" class="modal hidden">
     <div class="modal-card perm-card">

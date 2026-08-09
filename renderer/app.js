@@ -145,6 +145,9 @@ const OB_STEPS = [
   { id: 'pack', label: i18n.t('obSkills'), skippable: true },
 ];
 let obIndex = 0;
+// ما اختاره المستخدم من الحزم — يُثبَّت عند «ابدأ العمل» لا عند النقر،
+// فيبقى الاختيار قابلًا للتراجع ما دام في الجولة.
+const selectedPacks = new Set();
 
 function renderObSteps() {
   const box = $('#ob-steps');
@@ -241,21 +244,29 @@ async function renderOnboarding() {
     card.querySelector('strong').textContent = p.label;
     card.querySelector('span').textContent = p.description;
     card.querySelector('i').textContent = i18n.t('nSkills', { n: p.skills.length });
-    card.onclick = async () => {
-      const res = await window.kunnash.installPack(p.id);
-      card.classList.add('installed');
-      card.querySelector('i').textContent = res.installed.length
-        ? i18n.t('installedN', { n: res.installed.length })
-        : i18n.t('alreadyInstalled');
-      await renderHome();
-      populateActivation();
+    // اختيارٌ لا تثبيت.
+    // كان النقر يثبّت فورًا فلا سبيل للتراجع — ومن نقر مستطلعًا وجد نفسه
+    // ملزَمًا. فالنقر يعلّم ويرفع العلامة، والتثبيت يقع عند «ابدأ العمل»
+    // وحده. فيبقى القرار قرار المستخدم إلى آخر لحظة.
+    card.setAttribute('aria-pressed', 'false');
+    card.onclick = () => {
+      const on = !selectedPacks.has(p.id);
+      if (on) selectedPacks.add(p.id); else selectedPacks.delete(p.id);
+      card.classList.toggle('picked', on);
+      card.setAttribute('aria-pressed', String(on));
     };
+    if (selectedPacks.has(p.id)) {
+      card.classList.add('picked');
+      card.setAttribute('aria-pressed', 'true');
+    }
     list.appendChild(card);
   }
   body.appendChild(list);
   next.textContent = i18n.t('startWorking');
   next.disabled = false;
   next.onclick = async () => {
+    for (const id of selectedPacks) await window.kunnash.installPack(id);
+    selectedPacks.clear();
     await window.kunnash.saveProfile({ onboarded: 'true' });
     // العلم أولًا: applyWorkspace (يستدعيه renderHome) يقرأ onboarding ليقرر
     // ماذا يُظهر — فلو بقي مرفوعًا أعاد إخفاء المحادثة فور إظهارها.
@@ -1611,7 +1622,53 @@ $('#model-filter').addEventListener('input', renderModelList);
 modelListEl.addEventListener('change', () => {
   if (modelListEl.value) $('#conn-model').value = modelListEl.value;
 });
-modelChipEl.onclick = openSettings;
+// ---------- منتقي النموذج من صندوق الكتابة ----------
+// تبديل النموذج فعلٌ يتكرر في اليوم الواحد، فلا يصحّ أن يمرّ بنافذة
+// الإعدادات كلها. الرقاقة تفتح قائمةً واحدة، والاختيار يُحفظ ويُغلق.
+// وإدارة الاتصال وتحديث القائمة تبقى في الإعدادات — فعلٌ نادر في مكانه.
+const pickModal = $('#pick-model-modal');
+const pickListEl = $('#pick-list');
+let pickModels = [];
+
+function renderPickList() {
+  const q = $('#pick-filter').value.trim().toLowerCase();
+  const shown = q ? pickModels.filter((m) => (m.id + ' ' + m.name).toLowerCase().includes(q)) : pickModels;
+  pickListEl.innerHTML = '';
+  const cur = (connection && connection.model) || '';
+  for (const m of shown.slice(0, 300)) {
+    const b = document.createElement('button');
+    b.className = 'pick-item' + (m.id === cur ? ' current' : '');
+    b.setAttribute('dir', 'ltr');
+    b.textContent = m.id === m.name ? m.id : m.id + '  —  ' + m.name;
+    b.onclick = async () => {
+      await window.kunnash.saveConnection({ model: m.id });
+      const c = await window.kunnash.getConnection();
+      applyConnection({
+        label: c.label, model: c.model,
+        ready: Boolean(c.model && (c.hasKey || isLocalServiceUrl(c.baseUrl))),
+      });
+      pickModal.classList.add('hidden');
+    };
+    pickListEl.appendChild(b);
+  }
+}
+
+async function openModelPicker() {
+  const c = await window.kunnash.cachedModels();
+  pickModels = c.models || [];
+  $('#pick-filter').value = '';
+  $('#pick-empty').classList.toggle('hidden', pickModels.length > 0);
+  $('#pick-filter').classList.toggle('hidden', pickModels.length === 0);
+  renderPickList();
+  pickModal.classList.remove('hidden');
+  if (pickModels.length) $('#pick-filter').focus();
+}
+
+modelChipEl.onclick = openModelPicker;
+$('#pick-close').onclick = () => pickModal.classList.add('hidden');
+$('#pick-filter').addEventListener('input', renderPickList);
+pickModal.addEventListener('click', (e) => { if (e.target === pickModal) pickModal.classList.add('hidden'); });
+$('#pick-settings').onclick = () => { pickModal.classList.add('hidden'); openSettings(); };
 settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal) closeSettings(); });
 
 

@@ -955,3 +955,41 @@ html, body {
   opacity: 0; transition: opacity .15s;
 }
 .msg.user:hover .user-acts, .msg.user:focus-within .user-acts { opacity: 1; }
+
+/* ---------- منتقي النموذج ---------- */
+.pick-card { width: min(520px, 92vw); }
+.pick-card #pick-filter {
+  width: 100%; font-family: inherit; font-size: 13px; padding: 9px 11px;
+  border: 1px solid var(--line); border-radius: 8px;
+  background: var(--surface); color: var(--ink); margin-bottom: 10px;
+}
+.pick-card #pick-filter:focus { outline: none; border-color: var(--accent-soft); }
+.pick-list {
+  display: flex; flex-direction: column; gap: 2px;
+  max-height: 46vh; overflow-y: auto;
+  border: 1px solid var(--line); border-radius: 10px; padding: 6px;
+  background: var(--bg);
+}
+.pick-item {
+  text-align: start; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12.5px; padding: 8px 10px; border-radius: 7px;
+  background: none; border: 1px solid transparent; color: var(--ink); cursor: pointer;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.pick-item:hover { background: var(--surface); border-color: var(--line); }
+.pick-item.current {
+  background: var(--accent-wash); border-color: var(--accent-line);
+  color: var(--accent-strong); font-weight: 600;
+}
+
+/* حزمة مختارة في أول تشغيل — علامة تُرفع وتُنزل، لا تثبيتٌ لا رجعة فيه */
+.ob-pack.picked {
+  border-color: var(--accent);
+  background: var(--accent-wash);
+}
+.ob-pack.picked::after {
+  content: '✓';
+  position: absolute; inset-block-start: 10px; inset-inline-end: 12px;
+  color: var(--accent-strong); font-weight: 700;
+}
+.ob-pack { position: relative; }
