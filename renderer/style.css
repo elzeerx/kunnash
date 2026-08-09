@@ -229,13 +229,20 @@ html, body {
 .block-copy:hover { color: var(--accent-strong); border-color: var(--accent-soft); }
 /* المسودة (اقتباس): ما يأخذه المستخدم كما هو — بريدًا أو فقرة.
    بلا صندوق ملوّن: خطٌّ رفيع وفراغ سخيّ، فتُقرأ كنصٍّ نهائي لا كبطاقة. */
-/* المسودة: ما يُنسخ ويُرسل. بلا white-space: pre-wrap — الماركداون يبني
-   فقرات أصلًا، فإبقاؤه يضيف أسطر المصدر **فوق** هوامش الفقرات فتتضاعف
-   الفراغات وتبدو الرسالة ممزّقة. */
+/* المسودة: ما يُنسخ ويُرسل — رسالة بريد، فقرة، نصّ جاهز.
+   **صندوق ملوّن لا خطٌّ رفيع.** بطاقة الرد بيضاء، فالخطّ وحده يجعل المسودة
+   تبدو كلامًا متصلًا بالشرح — والمستخدم يحتاج أن يرى بلمحة **أين يبدأ النصّ
+   الذي يأخذه وأين ينتهي**. واللون يفعل ذلك، والخطّ على الحافة يبقى علامةً
+   على نوعه.
+   وبلا white-space: pre-wrap — الماركداون يبني فقرات أصلًا، فإبقاؤه يضيف
+   أسطر المصدر فوق هوامش الفقرات فتتضاعف الفراغات وتبدو الرسالة ممزّقة. */
 .msg .bubble blockquote {
   margin: 20px 0;
-  padding: 4px 18px;
-  border-inline-start: 2px solid var(--accent-soft);
+  padding: 16px 20px;
+  background: var(--code-bg);
+  border: 1px solid var(--line);
+  border-inline-start: 3px solid var(--accent-soft);
+  border-radius: 10px;
   color: var(--ink);
 }
 .msg .bubble blockquote p { margin: 0; }
@@ -243,7 +250,13 @@ html, body {
 
 /* الجدول: مسطرة تحت الترويسة وخيوط بين الصفوف — لا شبكة محبوسة */
 .msg .bubble table {
-  border-collapse: collapse; margin: 18px 0; font-size: 13.5px; width: 100%;
+  /* separate لا collapse: الانحناء لا يُقصّ مع الجداول المدمجة الحدود */
+  border-collapse: separate; border-spacing: 0;
+  margin: 18px 0; font-size: 13.5px; width: 100%;
+  background: var(--code-bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
 }
 .msg .bubble th, .msg .bubble td {
   padding: 8px 12px; text-align: start;
@@ -555,7 +568,7 @@ html, body {
   margin: 18px 0;
   border: 1px solid var(--line);
   border-radius: 10px;
-  background: var(--bg);
+  background: var(--code-bg);
   overflow: hidden;
 }
 .code-block > figcaption {
@@ -581,7 +594,7 @@ html, body {
 /* سياج بلا ترويسة (لم يمرّ على addCopyControls بعد): يبقى مقروءًا */
 .msg .bubble > pre {
   border: 1px solid var(--line); border-radius: 10px; margin: 18px 0;
-  background: var(--bg);
+  background: var(--code-bg);
 }
 
 /* الشيفرة والمسارات بلون مميّز: المستخدم يمسح البطاقة بعينه بحثًا عن
