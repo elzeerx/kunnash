@@ -240,12 +240,14 @@ html, body {
 .msg .bubble .block-card > .bar {
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
   padding: 8px 16px;
-  background: var(--code-bg);
-  border-block-end: 1px solid var(--line);
-  font-size: 11.5px; font-weight: 600; color: var(--muted);
+  background: var(--accent-wash);
+  border-block-end: 1px solid var(--accent-line);
+  font-size: 11.5px; font-weight: 600; color: var(--accent-strong);
   letter-spacing: .03em;
 }
-.msg .bubble .block-card > .bar .block-copy { font-weight: 400; }
+/* زرّ النسخ يتبع لون الشريط — لا يبقى رماديًا على أرضٍ خضراء */
+.msg .bubble .block-card > .bar .block-copy { font-weight: 400; color: var(--accent-strong); }
+.msg .bubble .block-card > .bar .block-copy:hover { background: var(--surface); }
 
 .msg .bubble blockquote {
   margin: 0;
