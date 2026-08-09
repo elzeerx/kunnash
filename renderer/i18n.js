@@ -110,6 +110,8 @@
     copyDraft:  ['نسخ المسودة وحدها', 'Copy the draft only'],
     copyBlock:  ['نسخ هذه الكتلة', 'Copy this block'],
     plainText:  ['نص', 'text'],
+    lblDraft:   ['مسودة', 'Draft'],
+    lblTable:   ['جدول', 'Table'],
     thinking:   ['يفكّر', 'Thinking'],
     thinkingDots: ['يفكّر…', 'Thinking…'],
 

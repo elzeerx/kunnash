@@ -397,47 +397,43 @@ function addCopyControls(msgDiv, rawText) {
   btn.onclick = () => copyFeedback(btn, rawText);
   msgDiv.appendChild(btn);
 
-  // الشيفرة تُغلَّف بترويسة تحمل اسم اللغة وزر النسخ — لا زرًّا عائمًا فوقها
-  for (const pre of msgDiv.querySelectorAll('pre')) {
-    if (pre.closest('.code-block')) continue;
-    const content = pre.innerText.trim();
+  // كلها تُغلَّف غلافًا واحدًا: شريطٌ يسمّي ما بداخله ويحمل زرّ النسخ.
+  // فيتعلّم المستخدم الشكل مرة فينطبق على المسودة والشيفرة والجدول جميعًا —
+  // وزرّ النسخ يجد موضعًا ثابتًا بدل أن يطفو عند المرور فلا يُعرف مكانه.
+  for (const el of msgDiv.querySelectorAll('pre, blockquote, table')) {
+    if (el.closest('.block-card')) continue;
+    const content = el.innerText.trim();
     if (!content) continue;
 
-    const code = pre.querySelector('code');
-    const cls = (code && code.getAttribute('class')) || '';
-    const lang = cls.startsWith('language-') ? cls.slice(9) : '';
+    let label, ltr = false;
+    if (el.tagName === 'PRE') {
+      const code = el.querySelector('code');
+      const cls = (code && code.getAttribute('class')) || '';
+      const lang = cls.startsWith('language-') ? cls.slice(9) : '';
+      label = lang || i18n.t('plainText');
+      ltr = Boolean(lang);              // أسماء اللغات لاتينية
+    } else {
+      label = i18n.t(el.tagName === 'BLOCKQUOTE' ? 'lblDraft' : 'lblTable');
+    }
 
     const fig = document.createElement('figure');
-    fig.className = 'code-block';
-    const cap = document.createElement('figcaption');
+    fig.className = 'block-card' + (el.tagName === 'PRE' ? ' is-code' : '');
+    const bar = document.createElement('figcaption');
+    bar.className = 'bar';
     const name = document.createElement('span');
-    name.className = 'lang bidi-isolate';
-    name.setAttribute('dir', 'ltr');
-    name.textContent = lang || i18n.t('plainText');
+    name.className = 'lbl';
+    if (ltr) { name.classList.add('bidi-isolate'); name.setAttribute('dir', 'ltr'); }
+    name.textContent = label;
     const b = document.createElement('button');
     b.className = 'block-copy';
     b.textContent = i18n.t('copy');
     b.onclick = (e) => { e.stopPropagation(); copyFeedback(b, content); };
-    cap.appendChild(name);
-    cap.appendChild(b);
+    bar.appendChild(name);
+    bar.appendChild(b);
 
-    pre.replaceWith(fig);
-    fig.appendChild(cap);
-    fig.appendChild(pre);
-  }
-
-  // المسودات والجداول: زرٌّ يظهر عند المرور، بلا تغيير بنيتها
-  for (const block of msgDiv.querySelectorAll('blockquote, table')) {
-    if (block.querySelector('.block-copy')) continue;
-    const content = block.innerText.trim();
-    if (!content) continue;
-    block.classList.add('copyable');
-    const b = document.createElement('button');
-    b.className = 'block-copy';
-    b.textContent = i18n.t('copy');
-    b.title = i18n.t(block.tagName === 'BLOCKQUOTE' ? 'copyDraft' : 'copyBlock');
-    b.onclick = (e) => { e.stopPropagation(); copyFeedback(b, content); };
-    block.appendChild(b);
+    el.replaceWith(fig);
+    fig.appendChild(bar);
+    fig.appendChild(el);
   }
 }
 

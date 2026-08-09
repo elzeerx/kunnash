@@ -212,51 +212,54 @@ html, body {
 #conn-advanced { margin-top: 10px; }
 #conn-advanced summary { font-size: 12px; color: var(--muted); cursor: pointer; margin-bottom: 4px; }
 
-/* كتل قابلة للنسخ: شيفرة، ومسودات في اقتباس، وجداول */
-.msg .bubble .copyable { position: relative; }
+/* زرّ النسخ — يعيش الآن في شريط الغلاف الموحّد، ثابتَ الموضع */
 .block-copy {
   background: none; border: none; border-radius: 5px;
   color: var(--muted); cursor: pointer; font-family: inherit; font-size: 11px;
   padding: 2px 6px; transition: color .15s, background .15s;
 }
 .block-copy:hover { background: var(--surface); }
-/* داخل مسودة أو جدول يبقى عائمًا ويظهر عند المرور — الترويسة للشيفرة وحدها */
-.copyable > .block-copy {
-  position: absolute; inset-block-start: 2px; inset-inline-end: 2px;
-  opacity: 0; transition: opacity .15s;
-}
-.copyable:hover > .block-copy { opacity: 1; }
 .block-copy:hover { color: var(--accent-strong); border-color: var(--accent-soft); }
 /* المسودة (اقتباس): ما يأخذه المستخدم كما هو — بريدًا أو فقرة.
    بلا صندوق ملوّن: خطٌّ رفيع وفراغ سخيّ، فتُقرأ كنصٍّ نهائي لا كبطاقة. */
-/* المسودة: ما يُنسخ ويُرسل — رسالة بريد، فقرة، نصّ جاهز.
-   **صندوق ملوّن لا خطٌّ رفيع.** بطاقة الرد بيضاء، فالخطّ وحده يجعل المسودة
-   تبدو كلامًا متصلًا بالشرح — والمستخدم يحتاج أن يرى بلمحة **أين يبدأ النصّ
-   الذي يأخذه وأين ينتهي**. واللون يفعل ذلك، والخطّ على الحافة يبقى علامةً
-   على نوعه.
-   وبلا white-space: pre-wrap — الماركداون يبني فقرات أصلًا، فإبقاؤه يضيف
-   أسطر المصدر فوق هوامش الفقرات فتتضاعف الفراغات وتبدو الرسالة ممزّقة. */
-.msg .bubble blockquote {
-  margin: 20px 0;
-  padding: 16px 20px;
+/* ————— الغلاف الموحّد للكتل المضمَّنة —————
+   دمجُ مفهومين اختارهما نوّاف:
+   «ورقة مرفوعة» — الجسم أبيضُ كالبطاقة، ويرتفع عنها **بظلٍّ لا بإطار**.
+   فالفصل يأتي من العمق لا من خطٍّ ملوّن، ويبدو مستندًا موضوعًا عليها.
+   «شريط علوي»  — شريطٌ يسمّي ما بداخله ويحمل زرّ النسخ. والاسم يجيب عن
+   سؤال المستخدم («ما هذا؟») لا عن سؤال المصمّم («كيف أفصله؟»)، وزرّ
+   النسخ يجد موضعًا ثابتًا بدل أن يطفو عند المرور فلا يُعرف مكانه.
+   وواحدٌ لثلاثتها — مسودة وشيفرة وجدول — فيتعلّمه المستخدم مرة. */
+.msg .bubble .block-card {
+  margin: 22px 0;
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 1px 2px rgba(38, 36, 31, .06), 0 6px 18px rgba(38, 36, 31, .10);
+  overflow: hidden;
+}
+.msg .bubble .block-card > .bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 8px 16px;
   background: var(--code-bg);
-  border: 1px solid var(--line);
-  border-inline-start: 3px solid var(--accent-soft);
-  border-radius: 10px;
+  border-block-end: 1px solid var(--line);
+  font-size: 11.5px; font-weight: 600; color: var(--muted);
+  letter-spacing: .03em;
+}
+.msg .bubble .block-card > .bar .block-copy { font-weight: 400; }
+
+.msg .bubble blockquote {
+  margin: 0;
+  padding: 18px 20px;
   color: var(--ink);
+  border: none;
+  background: none;
 }
 .msg .bubble blockquote p { margin: 0; }
 .msg .bubble blockquote p + p { margin-top: 10px; }
 
 /* الجدول: مسطرة تحت الترويسة وخيوط بين الصفوف — لا شبكة محبوسة */
 .msg .bubble table {
-  /* separate لا collapse: الانحناء لا يُقصّ مع الجداول المدمجة الحدود */
-  border-collapse: separate; border-spacing: 0;
-  margin: 18px 0; font-size: 13.5px; width: 100%;
-  background: var(--code-bg);
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  overflow: hidden;
+  border-collapse: collapse; margin: 0; font-size: 13.5px; width: 100%;
 }
 .msg .bubble th, .msg .bubble td {
   padding: 8px 12px; text-align: start;
@@ -564,20 +567,6 @@ html, body {
 /* كتلة الشيفرة: ترويسة حقيقية بدل حشو ٣٠ بكسل تحت زرٍّ عائم.
    والترويسة تكسب فائدة ثانية: **اسم اللغة**. فالمستخدم العادي يحتاج أن
    يعرف أهذا أمرٌ يُلصق في الطرفية أم بيانات JSON — والفرق لا يُرى بلا اسم. */
-.code-block {
-  margin: 18px 0;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: var(--code-bg);
-  overflow: hidden;
-}
-.code-block > figcaption {
-  display: flex; align-items: center; justify-content: space-between; gap: 8px;
-  padding: 5px 12px;
-  border-block-end: 1px solid var(--line);
-  font-size: 11.5px; color: var(--muted);
-}
-.code-block .lang { letter-spacing: .03em; }
 
 .msg .bubble pre {
   margin: 0;
@@ -591,11 +580,13 @@ html, body {
   font-family: ui-monospace, SFMono-Regular, Menlo, 'IBM Plex Sans Arabic', monospace;
   line-height: 1.85;
 }
-/* سياج بلا ترويسة (لم يمرّ على addCopyControls بعد): يبقى مقروءًا */
+/* سياج لم يُغلَّف بعد (أثناء البثّ): يبقى مقروءًا */
 .msg .bubble > pre {
   border: 1px solid var(--line); border-radius: 10px; margin: 18px 0;
   background: var(--code-bg);
 }
+/* جسم الشيفرة داخل الغلاف: تظليل خفيف يميّزها عن نصّ المسودة */
+.block-card.is-code > pre { background: var(--code-bg); }
 
 /* الشيفرة والمسارات بلون مميّز: المستخدم يمسح البطاقة بعينه بحثًا عن
    «أين حفظه؟» — واللون يجعل المسار يقفز إليه بلا أن يقرأ الفقرة كلها. */
