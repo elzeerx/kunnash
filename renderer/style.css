@@ -920,3 +920,12 @@ html, body {
 .lib-status { font-size: 12px; color: var(--ok); }
 .lib-status.fail { color: var(--danger); }
 .btn-send.btn-stop { background: var(--danger); }
+
+/* نسخ السؤال أو تعديله — يظهران عند المرور فلا يزاحمان النصّ */
+.msg.user { position: relative; }
+.user-acts {
+  display: flex; gap: 4px; justify-content: flex-end;
+  padding-inline: 4px;
+  opacity: 0; transition: opacity .15s;
+}
+.msg.user:hover .user-acts, .msg.user:focus-within .user-acts { opacity: 1; }

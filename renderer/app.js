@@ -287,6 +287,32 @@ function addUserMsg(text, attachNames) {
   bubble.textContent = text;
   bidi.setDir(bubble, text);        // «React هو مكتبة…» تبقى يمينية
   div.appendChild(bubble);
+
+  // نسخ السؤال أو تعديله وإعادة إرساله.
+  // بلا هذا، من أوقف تشغيلًا أو أصابه خطأ يعيد **كتابة طلبه من أوله** —
+  // وقد يكون فقرة كاملة. والتعديل يعيده إلى صندوق الكتابة كما هو ليصحّح
+  // كلمة فيه ويرسله، بدل أن يكتبه ثانية.
+  const acts = document.createElement('div');
+  acts.className = 'user-acts';
+  const cp = document.createElement('button');
+  cp.className = 'block-copy';
+  cp.textContent = i18n.t('copy');
+  cp.onclick = () => copyFeedback(cp, text);
+  const ed = document.createElement('button');
+  ed.className = 'block-copy';
+  ed.textContent = i18n.t('editRetry');
+  ed.title = i18n.t('editRetryTitle');
+  ed.onclick = () => {
+    inputEl.value = text;
+    autoGrow();
+    inputEl.focus();
+    inputEl.setSelectionRange(text.length, text.length);
+    updateSendState();
+  };
+  acts.appendChild(cp);
+  acts.appendChild(ed);
+  div.appendChild(acts);
+
   messagesEl.appendChild(div);
   scrollDown();
 }
@@ -1164,9 +1190,7 @@ function applyPreset(p) {
     ? i18n.t('keyStoredSvc')
     : (p.needsKey ? 'sk-...' : i18n.t('noKeyNeeded'));
 
-  allModels = [];
-  modelListEl.innerHTML = '';
-  modelBoxEl.classList.add('hidden');
+  showCachedModels();
   connStatusEl.className = 'test-status';
   connStatusEl.textContent = '';
   refreshConnForm();
@@ -1203,6 +1227,16 @@ function renderModelList() {
   $('#model-count').textContent = q
     ? i18n.t('nOfM', { n: shown.length, m: allModels.length })
     : i18n.t('nModels', { n: allModels.length });
+}
+
+// القائمة المحفوظة تُعرض فورًا: المستخدم يفتح الإعدادات ليختار نموذجًا،
+// لا ليطلب قائمة من الشبكة. والجلب فعلٌ صريح يفعله حين يريد الجديد.
+async function showCachedModels() {
+  const c = await window.kunnash.cachedModels();
+  allModels = c.models || [];
+  $('#model-filter').value = '';
+  modelBoxEl.classList.toggle('hidden', allModels.length === 0);
+  renderModelList();
 }
 
 async function refreshModels() {
@@ -1318,9 +1352,7 @@ async function openSettings() {
   connStatusEl.className = 'test-status';
   connStatusEl.textContent = '';
   $('#or-link-status').textContent = '';
-  allModels = [];
-  modelListEl.innerHTML = '';
-  modelBoxEl.classList.add('hidden');
+  showCachedModels();          // القائمة حاضرة فور الفتح — بلا نقرة ولا شبكة
   refreshConnForm();
   settingsModal.classList.remove('hidden');
   refreshCredits();

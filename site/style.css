@@ -380,3 +380,6 @@ footer {
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
 }
+
+.foot-links { margin-top: .75rem; }
+.foot-links a { margin-inline-end: .1rem; }

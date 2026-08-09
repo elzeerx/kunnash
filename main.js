@@ -166,11 +166,16 @@ ipcMain.handle('connection:link', async () => {
 
 ipcMain.handle('connection:models', async () => {
   try {
-    return { ok: true, models: await core.listModels(core.loadConnection()) };
+    const conn = core.loadConnection();
+    const models = await core.listModels(conn);
+    ws.saveModels(conn.baseUrl, models);   // تُحفظ ليختار منها لاحقًا بلا شبكة
+    return { ok: true, models };
   } catch (err) {
     return { ok: false, error: String(err && err.message || err) };
   }
 });
+// القائمة المحفوظة — يفتحها المستخدم ليختار، لا ليحدّث
+ipcMain.handle('connection:models-cached', () => ws.loadModels(core.loadConnection().baseUrl));
 ipcMain.handle('connection:credits', async () => {
   try {
     return { ok: true, credits: await core.getCredits(core.loadConnection()) };

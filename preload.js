@@ -23,6 +23,7 @@ contextBridge.exposeInMainWorld('kunnash', {
   revokeRule: (tool, scope) => ipcRenderer.invoke('rules:revoke', { tool, scope }),
   linkOpenRouter: () => ipcRenderer.invoke('connection:link'),
   listModels: () => ipcRenderer.invoke('connection:models'),
+  cachedModels: () => ipcRenderer.invoke('connection:models-cached'),
   getCredits: () => ipcRenderer.invoke('connection:credits'),
 
   // مكتبة العملاء والمهارات
