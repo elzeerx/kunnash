@@ -383,3 +383,17 @@ footer {
 
 .foot-links { margin-top: .75rem; }
 .foot-links a { margin-inline-end: .1rem; }
+
+/* ————————————————— لقطة التطبيق ————————————————— */
+.shot-band { padding-block: 0; }
+.shot { margin: 0; }
+.shot img {
+  display: block; width: 100%; height: auto;
+  border: 1px solid var(--line);
+  border-radius: .875rem;
+  box-shadow: 0 2px 4px rgba(38,36,31,.05), 0 12px 32px rgba(38,36,31,.10);
+}
+.shot figcaption {
+  margin-top: .85rem; text-align: center;
+  font-size: .9rem; color: var(--muted);
+}
