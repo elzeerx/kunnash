@@ -397,3 +397,4 @@ footer {
   margin-top: .85rem; text-align: center;
   font-size: .9rem; color: var(--muted);
 }
+.shot-inline { margin-top: 2.25rem; }
