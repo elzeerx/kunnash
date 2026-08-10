@@ -398,3 +398,16 @@ footer {
   font-size: .9rem; color: var(--muted);
 }
 .shot-inline { margin-top: 2.25rem; }
+
+/* زرّا التحميل — نسخة لكل معمارية */
+.downloads {
+  display: flex; flex-wrap: wrap; justify-content: center;
+  gap: .75rem; margin-top: 2.25rem;
+}
+.downloads .download { margin-top: 0; }
+.download-alt {
+  background: var(--surface);
+  color: var(--accent-strong);
+  border: 1px solid var(--accent-line);
+}
+.download-alt:hover { background: var(--accent-wash); color: var(--accent-strong); }

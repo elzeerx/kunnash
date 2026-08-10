@@ -23,9 +23,23 @@ TEAM_ID="L432D2983H"
 NOTARY_PROFILE="kunnash"
 VERSION="$(node -p "require('./package.json').version")"
 
-DIST="dist"
+# المعمارية: arm64 افتراضًا، و`ARCH=x64 build/release.sh` لأجهزة إنتل.
+# ملفان مستقلان لا حزمة عالمية: العالمية تُضاعف تنزيل **كل** مستخدم لأجل
+# أقلية، وأكثر من يحمّل اليوم على معالج آبل. فيدفع كلٌّ ثمن نسخته وحدها.
+ARCH="${ARCH:-arm64}"
+case "$ARCH" in
+  arm64) ARCH_LABEL="AppleSilicon" ;;
+  x64)   ARCH_LABEL="Intel" ;;
+  *)     printf '\033[31m✗ معمارية مجهولة: %s (arm64 أو x64)\033[0m\n' "$ARCH" >&2; exit 1 ;;
+esac
+
+DIST="dist/$ARCH"
 APP="$DIST/$APP_NAME.app"
-DMG="$DIST/Kunnash-$VERSION.dmg"
+DMG="$DIST/Kunnash-$VERSION-$ARCH_LABEL.dmg"
+# نسخة Electron لهذه المعمارية — تُنزَّل مرة وتُخزَّن
+ELECTRON_VER="$(node -p "require('./node_modules/electron/package.json').version")"
+ELECTRON_SRC="node_modules/electron/dist"
+[ "$ARCH" = "arm64" ] || ELECTRON_SRC="build/.electron-$ARCH-$ELECTRON_VER"
 ENTITLEMENTS="build/entitlements.plist"
 IDENTITY="Developer ID Application: Nawaf Alsuwaiyed ($TEAM_ID)"
 PB=/usr/libexec/PlistBuddy
@@ -49,7 +63,19 @@ preflight() {
 
   [ -d node_modules/electron/dist/Electron.app ] \
     || die "Electron غير مثبّت. شغّل: npm install"
-  echo "  ✓ Electron $(cat node_modules/electron/dist/version)"
+
+  # معمارية غير معمارية الجهاز: نجلب نسخة Electron الرسمية لها مرة واحدة
+  if [ ! -d "$ELECTRON_SRC/Electron.app" ]; then
+    say "جلب Electron $ELECTRON_VER لمعمارية $ARCH"
+    local zip="build/.electron-$ARCH-$ELECTRON_VER.zip"
+    curl -fL --progress-bar -o "$zip" \
+      "https://github.com/electron/electron/releases/download/v$ELECTRON_VER/electron-v$ELECTRON_VER-darwin-$ARCH.zip" \
+      || die "تعذّر جلب Electron لمعمارية $ARCH"
+    rm -rf "$ELECTRON_SRC"; mkdir -p "$ELECTRON_SRC"
+    ditto -x -k "$zip" "$ELECTRON_SRC" || die "تعذّر فكّ الأرشيف"
+    rm -f "$zip"
+  fi
+  echo "  ✓ Electron $ELECTRON_VER · معمارية $ARCH"
 
   # لا نوقّع شيفرةً لم تجتز اختباراتها
   npm test >/dev/null 2>&1 || die "الاختبارات لم تمر. لا نوقّع شيفرة معطوبة."
@@ -58,11 +84,11 @@ preflight() {
 
 # ————————————————————————————————— بناء الحزمة
 stage() {
-  say "بناء $APP_NAME.app — الإصدار $VERSION"
+  say "بناء $APP_NAME.app — الإصدار $VERSION · $ARCH"
 
   rm -rf "$APP"
   mkdir -p "$DIST"
-  cp -R node_modules/electron/dist/Electron.app "$APP"
+  cp -R "$ELECTRON_SRC/Electron.app" "$APP"
 
   local C="$APP/Contents"
 
@@ -86,7 +112,7 @@ stage() {
 
   # ٣) الأيقونة
   node_modules/.bin/electron build/icon.js >/dev/null 2>&1
-  cp "$DIST/kunnash.icns" "$C/Resources/$EXEC_NAME.icns"
+  cp dist/kunnash.icns "$C/Resources/$EXEC_NAME.icns"   # icon.js يكتب في dist/ لا في dist/$ARCH
   rm -f "$C/Resources/electron.icns"
 
   # ٤) شيفرة التطبيق — بلا node_modules، فلا تبعيات تشغيل أصلًا
