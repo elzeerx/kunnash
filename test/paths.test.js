@@ -181,3 +181,19 @@ describe('الكتابة المقسّاة', () => {
     assert.strictEqual(fs.readFileSync(path.join(outside, 'سرّي.txt'), 'utf8'), 'لا يجوز الوصول');
   });
 });
+
+// ————— فاصل المسار موحّد —————
+// `rel` ليس مسار نظامٍ يُفتح به ملف، بل **قيمة تُعرض وتُطابَق**: تظهر
+// للمستخدم، وتُقارن بأنماط glob، وتُحفظ في قواعد الأذونات. فلو خرجت
+// بـ«\» على ويندوز لانكسر كل ذلك — واختبارٌ يمرّ على الماك وحده لا يكشفه.
+describe('فاصل المسار في المُخرَج', () => {
+  test('rel يخرج بـ«/» دائمًا مهما تعمّق', () => {
+    const deep = path.join(root, 'أ', 'ب', 'ج');
+    fs.mkdirSync(deep, { recursive: true });
+    fs.writeFileSync(path.join(deep, 'د.md'), 'x');
+    const { rel } = resolveInWorkspace(root, 'أ/ب/ج/د.md');
+    assert.strictEqual(rel, 'أ/ب/ج/د.md');
+    assert.ok(!rel.includes('\\'), `تسرّب فاصل ويندوز: ${rel}`);
+  });
+
+});
