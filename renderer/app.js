@@ -116,8 +116,18 @@ function applyConnection(info) {
   c.title = ready ? connection.model : i18n.t('finishSetupLong');
   chips.appendChild(c);
 
-  modelChipEl.textContent = ready ? connection.model : i18n.t('finishSetup');
+  // الرقاقة تعرض اسم النموذج لا معرّفه: المعرّف تتكرر بادئته فيُقصّ آخره —
+  // وهو ما يميّزه. والاسم يأتي من القائمة المحفوظة، فإن لم تُجلب بعدُ رجعنا
+  // إلى المعرّف: نعرض ما نعرفه لا فراغًا. والمعرّف يبقى في التلميح دائمًا.
+  modelChipEl.textContent = ready ? modelLabel(connection.model) : i18n.t('finishSetup');
+  modelChipEl.title = ready ? connection.model : i18n.t('modelChipTitle');
   modelChipEl.classList.toggle('unset', !ready);
+}
+
+/** اسم النموذج من القائمة المحفوظة، وإلا معرّفه */
+function modelLabel(id) {
+  const hit = allModels.find((m) => m.id === id) || pickModels.find((m) => m.id === id);
+  return (hit && hit.name) || id;
 }
 
 function applyGreeting(name) {
@@ -1677,6 +1687,8 @@ activationEl.addEventListener('change', () => {
   const prof = await window.kunnash.getProfile();
   // اللغة قبل كل رسم: تبديلها يقلب اتجاه الواجهة كلها، ورسمُها مرتين ارتجاف
   i18n.setLang(prof.lang || 'ar');
+  // القائمة المحفوظة قبل أول رسم: منها تعرف الرقاقة اسمَ النموذج لا معرّفه
+  await showCachedModels();
   applyGreeting(prof.name);
   const wsInfo = await window.kunnash.getWorkspace();
   // أول تشغيل: بلا مساحة عمل، أو لم يُكمل الجولة التعريفية بعد
