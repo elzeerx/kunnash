@@ -1,0 +1,32 @@
+# الاختبارات على نظامين — لنعرف بالأرقام ما ينكسر على ويندوز قبل أن نبني له.
+#
+# ماك للمقارنة: رقمٌ وحده لا يقول شيئًا. أما «١٧٥ على ماك و١٦٨ على ويندوز»
+# فيدلّ على السبعة بأعيانها.
+#
+# --ignore-scripts عمدًا: الاختبارات كلها node:test خالص ولا تلمس Electron،
+# فلا داعي لتنزيل مئة ميجابايت من ثنائياته في كل تشغيل.
+
+name: الاختبارات
+
+on:
+  push:
+    branches: [main]
+    paths: ['lib/**', 'renderer/**', 'test/**', 'main.js', 'preload.js', 'package.json', '.github/workflows/tests.yml']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false          # نريد نتيجة النظامين معًا لا أولَ ساقط
+      matrix:
+        os: [macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --ignore-scripts
+      - run: npm test
