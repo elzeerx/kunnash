@@ -139,11 +139,7 @@
           <button id="btn-refresh-models" class="btn-ghost-dark" data-i18n-title="refreshTitle" data-i18n="refreshModels">↻ القائمة</button>
         </div>
 
-        <div id="model-picker-box" class="model-picker-box hidden">
-          <input id="model-filter" type="text" data-i18n-placeholder="searchModels" />
-          <select id="model-list" size="6"></select>
-          <span id="model-count" class="label-note"></span>
-        </div>
+        <button id="open-picker" type="button" class="btn-ghost-dark open-picker hidden"></button>
 
         <label for="conn-key"><span data-i18n="apiKey">المفتاح</span> <span id="key-optional-note" class="label-note hidden" data-i18n="keyOptional">— الخدمة المحلية لا تحتاجه</span></label>
         <input id="conn-key" type="password" dir="ltr" placeholder="sk-..." />

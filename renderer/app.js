@@ -1155,8 +1155,7 @@ const presetRowEl = $('#preset-row');
 const presetHintEl = $('#preset-hint');
 const orLinkRowEl = $('#or-link-row');
 const creditsLineEl = $('#credits-line');
-const modelBoxEl = $('#model-picker-box');
-const modelListEl = $('#model-list');
+
 
 let presets = [];
 let allModels = [];        // آخر قائمة جُلبت — تُفلتر محليًا بلا طلب جديد
@@ -1221,32 +1220,21 @@ async function renderPresets() {
   }
 }
 
-// ---------- منتقي النماذج ----------
-// قائمة حقيقية لا datalist: الأخيرة تفلتر بقيمة الحقل، فبعد اختيار نموذج
-// لا يبقى في القائمة إلا هو — فيتعذّر تبديله. الفلترة الآن بحقل مستقل.
+// ---------- قائمة النماذج في الإعدادات ----------
+// كانت قائمةً مفتوحة داخل النافذة (select size=6) فتُطيلها ويضطر المستخدم
+// للتمرير ليصل إلى «حفظ». صارت زرًّا واحدًا يعرض العدد ويفتح المنتقي
+// المنبثق نفسه — فالنافذة تبقى قصيرة، ومكانُ اختيار النموذج واحدٌ لا اثنان.
 function renderModelList() {
-  const q = $('#model-filter').value.trim().toLowerCase();
-  const shown = q ? allModels.filter((m) => (m.id + ' ' + m.name).toLowerCase().includes(q)) : allModels;
-  modelListEl.innerHTML = '';
-  for (const m of shown.slice(0, 400)) {
-    const o = document.createElement('option');
-    o.value = m.id;
-    o.textContent = m.id === m.name ? m.id : `${m.id}  —  ${m.name}`;
-    if (m.id === $('#conn-model').value.trim()) o.selected = true;
-    modelListEl.appendChild(o);
-  }
-  $('#model-count').textContent = q
-    ? i18n.t('nOfM', { n: shown.length, m: allModels.length })
-    : i18n.t('nModels', { n: allModels.length });
+  const btn = $('#open-picker');
+  btn.classList.toggle('hidden', allModels.length === 0);
+  btn.textContent = i18n.t('pickFromList', { n: allModels.length });
 }
 
-// القائمة المحفوظة تُعرض فورًا: المستخدم يفتح الإعدادات ليختار نموذجًا،
-// لا ليطلب قائمة من الشبكة. والجلب فعلٌ صريح يفعله حين يريد الجديد.
+// القائمة المحفوظة تُقرأ بلا شبكة — المستخدم يفتح الإعدادات ليدير الاتصال،
+// لا ليطلب قائمة. والجلب فعلٌ صريح («تحديث القائمة») يفعله حين يريد الجديد.
 async function showCachedModels() {
   const c = await window.kunnash.cachedModels();
   allModels = c.models || [];
-  $('#model-filter').value = '';
-  modelBoxEl.classList.toggle('hidden', allModels.length === 0);
   renderModelList();
 }
 
@@ -1263,8 +1251,6 @@ async function refreshModels() {
     return;
   }
   allModels = res.models;
-  $('#model-filter').value = '';
-  modelBoxEl.classList.remove('hidden');
   renderModelList();
 }
 
@@ -1618,10 +1604,8 @@ $('#btn-test-conn').onclick = testConnection;
 $('#btn-link-or').onclick = linkOpenRouterFlow;
 $('#btn-refresh-models').onclick = refreshModels;
 $('#conn-url').addEventListener('input', refreshConnForm);
-$('#model-filter').addEventListener('input', renderModelList);
-modelListEl.addEventListener('change', () => {
-  if (modelListEl.value) $('#conn-model').value = modelListEl.value;
-});
+// الزرّ داخل الإعدادات يفتح المنتقي نفسه، ويكتب الاختيار في حقل النموذج
+$('#open-picker').onclick = () => openModelPicker({ intoField: true });
 // ---------- منتقي النموذج من صندوق الكتابة ----------
 // تبديل النموذج فعلٌ يتكرر في اليوم الواحد، فلا يصحّ أن يمرّ بنافذة
 // الإعدادات كلها. الرقاقة تفتح قائمةً واحدة، والاختيار يُحفظ ويُغلق.
@@ -1629,37 +1613,46 @@ modelListEl.addEventListener('change', () => {
 const pickModal = $('#pick-model-modal');
 const pickListEl = $('#pick-list');
 let pickModels = [];
+let pickIntoField = false;   // مفتوحًا من الإعدادات: يكتب في الحقل ولا يحفظ
 
 function renderPickList() {
   const q = $('#pick-filter').value.trim().toLowerCase();
   const shown = q ? pickModels.filter((m) => (m.id + ' ' + m.name).toLowerCase().includes(q)) : pickModels;
   pickListEl.innerHTML = '';
-  const cur = (connection && connection.model) || '';
+  const cur = pickIntoField ? $('#conn-model').value.trim() : ((connection && connection.model) || '');
   for (const m of shown.slice(0, 300)) {
     const b = document.createElement('button');
     b.className = 'pick-item' + (m.id === cur ? ' current' : '');
     b.setAttribute('dir', 'ltr');
     b.textContent = m.id === m.name ? m.id : m.id + '  —  ' + m.name;
     b.onclick = async () => {
-      await window.kunnash.saveConnection({ model: m.id });
-      const c = await window.kunnash.getConnection();
-      applyConnection({
-        label: c.label, model: c.model,
-        ready: Boolean(c.model && (c.hasKey || isLocalServiceUrl(c.baseUrl))),
-      });
+      // من الإعدادات: يكتب في الحقل ليحفظه المستخدم مع بقية تعديلاته.
+      // من الرقاقة: يحفظ فورًا — لا نافذة حوله ليضغط فيها «حفظ».
+      if (pickIntoField) {
+        $('#conn-model').value = m.id;
+      } else {
+        await window.kunnash.saveConnection({ model: m.id });
+        const c = await window.kunnash.getConnection();
+        applyConnection({
+          label: c.label, model: c.model,
+          ready: Boolean(c.model && (c.hasKey || isLocalServiceUrl(c.baseUrl))),
+        });
+      }
       pickModal.classList.add('hidden');
     };
     pickListEl.appendChild(b);
   }
 }
 
-async function openModelPicker() {
+async function openModelPicker(opts) {
+  pickIntoField = Boolean(opts && opts.intoField);
   const c = await window.kunnash.cachedModels();
   pickModels = c.models || [];
   $('#pick-filter').value = '';
   $('#pick-empty').classList.toggle('hidden', pickModels.length > 0);
   $('#pick-filter').classList.toggle('hidden', pickModels.length === 0);
   renderPickList();
+  $('#pick-settings').classList.toggle('hidden', pickIntoField);
   pickModal.classList.remove('hidden');
   if (pickModels.length) $('#pick-filter').focus();
 }

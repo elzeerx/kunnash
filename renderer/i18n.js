@@ -52,6 +52,7 @@
     pickEmpty:    ['لا قائمة محفوظة بعد — افتح «إدارة الاتصال والقائمة» واضغط «تحديث القائمة» مرة واحدة.',
                    'No saved list yet — open “Manage connection” and press “Refresh list” once.'],
     pickManage:   ['إدارة الاتصال والقائمة', 'Manage connection & list'],
+    pickFromList: ['اختر من القائمة ({n} نموذجًا)', 'Choose from list ({n} models)'],
     modelChipTitle: ['تغيير النموذج', 'Change model'],
     send:         ['إرسال', 'Send'],
     privacyNote:  ['ما تكتبه هنا يغادر جهازك إلى مزوّد النموذج الذي اخترته · ملفاتك تبقى مكانها',
