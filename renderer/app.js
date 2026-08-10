@@ -1624,7 +1624,10 @@ function renderPickList() {
     const b = document.createElement('button');
     b.className = 'pick-item' + (m.id === cur ? ' current' : '');
     b.setAttribute('dir', 'ltr');
-    b.textContent = m.id === m.name ? m.id : m.id + '  —  ' + m.name;
+    // الاسم وحده. المعرّف طويل ويتكرر بادئتُه (anthropic/…, google/…) فيزاحم
+    // ما يميّز النموذج فعلًا. ويبقى في التلميح لمن يحتاجه — ولا يضيع.
+    b.textContent = m.name || m.id;
+    b.title = m.id;
     b.onclick = async () => {
       // من الإعدادات: يكتب في الحقل ليحفظه المستخدم مع بقية تعديلاته.
       // من الرقاقة: يحفظ فورًا — لا نافذة حوله ليضغط فيها «حفظ».
