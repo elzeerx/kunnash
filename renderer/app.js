@@ -1382,9 +1382,13 @@ async function saveSettings(keepOpen) {
   await window.kunnash.saveProfile({ name: $('#profile-name').value.trim(), lang });
   if (lang !== i18n.getLang()) {
     i18n.setLang(lang);
-    // ما رُسم بجافاسكربت (التحية، الجلسات، اللوحة) لا يحمل data-i18n فيُعاد رسمه
+    // applyDom يُحدّث ما يحمل data-i18n وحده. وما بُني بجافاسكربت يحمل نصَّ
+    // لغةِ بنائه، فيبقى بها حتى يُعاد بناؤه — ولا يراه أحد إلا من بدّل اللغة.
     applyGreeting($('#profile-name').value.trim());
     renderHome();
+    populateActivation();       // «تفعيل تلقائي» ورؤوس المهارات والعملاء
+    refreshSessions();          // «هذه المحادثة تعمل الآن» وأزرار الحذف
+    if (connection) applyConnection(connection);   // رقاقة النموذج وحالة الاتصال
   }
   await window.kunnash.saveConnection(connectionPatch());
   const c = await window.kunnash.getConnection();
