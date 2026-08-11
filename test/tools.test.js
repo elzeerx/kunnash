@@ -198,3 +198,40 @@ describe('تقليم النص المحفوظ', () => {
     ]));
   });
 });
+
+describe('البحث يفهم العربية كما يفهمها المحفّز', () => {
+  // المفارقة التي عالجها هذا: التطبيق يعرف في محفّز المهارات أن «الاسبوع»
+  // هي «الأسبوع» (تطبيع skills.js)، ثم يبحث في ملفات صاحبه بـincludes
+  // الحرفية فلا يجدها. القاعدة الواحدة صارت في lib/arabic.js للاثنين.
+  const { normalize } = require('../lib/arabic');
+
+  before(() => {
+    fs.writeFileSync(path.join(root, 'تقرير-مشكل.md'),
+      'ملخّص الأسبوع: المبيعات مستقرة\nالمورّد الرئيسي: شركة النور');
+  });
+
+  test('التشكيل وهمزات الألف والتاء المربوطة تتوحد', () => {
+    assert.strictEqual(normalize('ملخّص'), normalize('ملخص'));
+    assert.strictEqual(normalize('الأسبوع'), normalize('الاسبوع'));
+    assert.strictEqual(normalize('شركة'), normalize('شركه'));
+  });
+
+  test('بلا تشكيل يجد المشكَّل، وبلا همزة يجد المهموز', () => {
+    assert.match(t('search_files').exec({ query: 'ملخص الاسبوع' }, ctx), /تقرير-مشكل\.md/);
+    assert.match(t('search_files').exec({ query: 'شركه النور' }, ctx), /تقرير-مشكل\.md/);
+  });
+
+  test('exact:true يعيد الحرفية لمن أرادها', () => {
+    assert.match(t('search_files').exec({ query: 'ملخّص', exact: true }, ctx), /تقرير-مشكل\.md/);
+    assert.strictEqual(
+      t('search_files').exec({ query: 'ملخص', exact: true }, ctx).startsWith('لا نتائج'), true);
+  });
+
+  test('regex كما كان بلا مساس', () => {
+    assert.match(t('search_files').exec({ query: 'المبيعات|المشتريات', regex: true }, ctx), /تقرير-مشكل\.md/);
+  });
+
+  test('استعلام فارغ بعد التطبيع يُرفض برسالة لا بنتائج كاذبة', () => {
+    assert.throws(() => t('search_files').exec({ query: '؟؟؟' }, ctx), /فارغ بعد التطبيع/);
+  });
+});
