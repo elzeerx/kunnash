@@ -48,7 +48,7 @@ const rejects = (input, code, opts) => {
 describe('الاحتواء', () => {
   test('مسار نسبي عادي يمرّ', () => {
     const { rel } = resolveInWorkspace(root, 'تقارير/تقرير.md');
-    assert.strictEqual(rel, path.join('تقارير', 'تقرير.md'));
+    assert.strictEqual(rel, 'تقارير/تقرير.md');
   });
 
   test('الجذر نفسه مقبول ويعطي rel فارغًا', () => {
@@ -68,7 +68,7 @@ describe('الاحتواء', () => {
 
   test('مسار مطلق داخل المجلد مقبول', () => {
     const { rel } = resolveInWorkspace(root, path.join(root, 'تقارير', 'تقرير.md'));
-    assert.strictEqual(rel, path.join('تقارير', 'تقرير.md'));
+    assert.strictEqual(rel, 'تقارير/تقرير.md');
   });
 
   // ‎startsWith(root + sep)‎ يمسك هذه، لكن ‎startsWith(root)‎ وحدها تسقط فيها
@@ -92,7 +92,7 @@ describe('الروابط الرمزية', () => {
 
   test('رابط داخلي مشروع يُقبل ويُحلّ لهدفه', () => {
     const { rel } = resolveInWorkspace(root, 'اختصار/تقرير.md');
-    assert.strictEqual(rel, path.join('تقارير', 'تقرير.md'));
+    assert.strictEqual(rel, 'تقارير/تقرير.md');
   });
 
   test('الجذر خلف رابط رمزي: مسار داخله يُقبل ولا يُرفض كذبًا', () => {
@@ -113,7 +113,7 @@ describe('الروابط الرمزية', () => {
 describe('الكتابة', () => {
   test('ملف غير موجود يُقبل للكتابة (لا يمكن realpath لما لم يُنشأ)', () => {
     const { abs, rel } = resolveInWorkspace(root, 'تقارير/جديد/عميق/ملف.md', { forWrite: true });
-    assert.strictEqual(rel, path.join('تقارير', 'جديد', 'عميق', 'ملف.md'));
+    assert.strictEqual(rel, 'تقارير/جديد/عميق/ملف.md');
     assert.ok(path.isAbsolute(abs));
   });
 
@@ -130,7 +130,7 @@ describe('الكتابة', () => {
 
   test('الممنوع للكتابة مقروء', () => {
     assert.strictEqual(resolveInWorkspace(root, '.kunnash').rel, '.kunnash');
-    assert.strictEqual(resolveInWorkspace(root, '.claude/skills').rel, path.join('.claude', 'skills'));
+    assert.strictEqual(resolveInWorkspace(root, '.claude/skills').rel, '.claude/skills');
   });
 
   test('شيفرة التطبيق نفسها ممنوعة حين تكون مساحة العمل هي مجلد المشروع', () => {

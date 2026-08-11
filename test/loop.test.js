@@ -252,7 +252,9 @@ describe('الإلغاء والانقطاع', () => {
     script = [
       (req, res) => {
         sse(res, [textDelta('بدأت العمل. '), callDelta(0, 'c1', 'read_file', '{"path":"ملف.txt"}'), finish('tool_calls')]);
-        setTimeout(() => ac.abort(), 5);   // يُلغى قبل الجولة الثانية
+        setTimeout(() => ac.abort(), 60);  // يُلغى قبل الجولة الثانية.
+        // ٦٠ لا ٥: خمسةٌ تكفي على جهاز مطوّر وتضيق على آلة بناء مشتركة،
+        // فيسقط الاختبار بلا عطبٍ في الشيفرة — وهذا أسوأ من ألّا يوجد.
       },
     ];
     const res = await run({ signal: ac.signal });
