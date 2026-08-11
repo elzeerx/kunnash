@@ -828,6 +828,33 @@ $('#btn-attach').onclick = async () => {
   addAttachments(paths);
 };
 
+// لصق صورة من الحافظة.
+// السحب والإفلات يعطي **مسارًا**، أما اللصق فيعطي **بايتات بلا مسار** —
+// ولا تستطيع الواجهة كتابة ملف (لا fs خلف الجسر عمدًا). فتُرسل البايتات
+// إلى العملية الرئيسية لتكتبها في مجلد النظام المؤقت وترجع مسارها.
+//
+// ولا نمنع اللصق الافتراضي إلا حين تكون هناك صورة فعلًا: لصق نصٍّ فيه
+// صورةٌ منسوخة معه يجب أن يُلصق نصُّه كالمعتاد.
+inputEl.addEventListener('paste', async (e) => {
+  const items = [...(e.clipboardData ? e.clipboardData.items : [])];
+  const imgs = items.filter((it) => it.kind === 'file' && it.type.startsWith('image/'));
+  if (!imgs.length) return;                 // نصٌّ خالص — اللصق المعتاد
+  e.preventDefault();
+
+  for (const it of imgs) {
+    const file = it.getAsFile();
+    if (!file) continue;
+    try {
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      const ext = '.' + (file.type.split('/')[1] || 'png').replace('jpeg', 'jpg');
+      const saved = await window.kunnash.pasteImage(bytes, ext);
+      addAttachments([saved.path]);
+    } catch (err) {
+      addError(String(err && err.message || err));
+    }
+  }
+});
+
 const composerEl = document.querySelector('.composer');
 ['dragover', 'dragenter'].forEach((ev) => document.addEventListener(ev, (e) => {
   e.preventDefault();

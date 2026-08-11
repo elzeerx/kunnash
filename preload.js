@@ -24,6 +24,7 @@ contextBridge.exposeInMainWorld('kunnash', {
   linkOpenRouter: () => ipcRenderer.invoke('connection:link'),
   listModels: () => ipcRenderer.invoke('connection:models'),
   cachedModels: () => ipcRenderer.invoke('connection:models-cached'),
+  pasteImage: (bytes, ext) => ipcRenderer.invoke('attach:paste', { bytes, ext }),
   getCredits: () => ipcRenderer.invoke('connection:credits'),
 
   // مكتبة العملاء والمهارات

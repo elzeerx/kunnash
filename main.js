@@ -174,6 +174,23 @@ ipcMain.handle('connection:models', async () => {
     return { ok: false, error: String(err && err.message || err) };
   }
 });
+// صورةٌ من الحافظة: بايتات بلا مسار، والمرفقات كلها مسارات.
+// تُكتب في مجلد النظام المؤقت **لا في مساحة العمل** — لأن المستخدم لصق
+// صورة ولم يطلب كتابة ملف في مجلده. وحدٌّ للحجم يمنع لصقةً تُتخم الذاكرة.
+const PASTE_MAX = 20 * 1024 * 1024;
+ipcMain.handle('attach:paste', (_e, { bytes, ext }) => {
+  const buf = Buffer.from(bytes);
+  if (!buf.length) throw new Error('الحافظة فارغة');
+  if (buf.length > PASTE_MAX) throw new Error('الصورة أكبر من ٢٠ ميجابايت');
+  const safe = /^\.(png|jpg|jpeg|webp|gif)$/i.test(ext || '') ? ext.toLowerCase() : '.png';
+  const dir = path.join(app.getPath('temp'), 'kunnash-paste');
+  require('fs').mkdirSync(dir, { recursive: true });
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const file = path.join(dir, `لصق-${stamp}${safe}`);
+  require('fs').writeFileSync(file, buf);
+  return { path: file, name: path.basename(file) };
+});
+
 // القائمة المحفوظة — يفتحها المستخدم ليختار، لا ليحدّث
 ipcMain.handle('connection:models-cached', () => ws.loadModels(core.loadConnection().baseUrl));
 ipcMain.handle('connection:credits', async () => {
