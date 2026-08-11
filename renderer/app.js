@@ -1591,7 +1591,7 @@ async function showWorkspaceMenu() {
   for (const w of list) {
     const row = document.createElement('button');
     row.className = 'ws-item' + (w.current ? ' current' : '') + (w.missing ? ' missing' : '');
-    row.innerHTML = '<strong></strong><span></span>';
+    row.innerHTML = '<div class="ws-main"><strong></strong><span></span></div>';
     row.querySelector('strong').textContent = (w.current ? '● ' : '') + w.name;
     row.querySelector('span').textContent = w.missing ? i18n.t('missingOnDisk') : w.path;
     row.onclick = async () => {
@@ -1599,6 +1599,24 @@ async function showWorkspaceMenu() {
       if (w.current || w.missing) return;
       await afterWorkspaceChange(await window.kunnash.switchWorkspace(w.path));
     };
+    // إزالة الوصول — كانت القناة محفورة (workspace:forget) ولا زرَّ يستدعيها،
+    // فبدت الخاصية للمستخدم غيرَ موجودة. والإزالة سحبُ اختيارٍ لا حذف:
+    // ملفاته و‎.kunnash/‎ يبقيان، والعودة للمجلد تجد كل شيء مكانه.
+    const del = document.createElement('span');
+    del.className = 'ws-forget';
+    del.textContent = '✕';
+    del.title = i18n.t('forgetWs');
+    del.onclick = async (e) => {
+      e.stopPropagation();
+      if (!confirm(i18n.t('forgetWsConfirm', { name: w.name }))) return;
+      const res = await window.kunnash.forgetWorkspace(w.path);
+      menu.remove();
+      // كانت الحالية؟ إعادة الإقلاع تهبط على شاشة اختيار المجلد — مسار
+      // الإقلاع المختبر نفسه، لا نسخة ثانية من منطقه هنا.
+      if (res && res.wasCurrent) location.reload();
+      else showWorkspaceMenu();
+    };
+    row.appendChild(del);
     menu.appendChild(row);
   }
   const add = document.createElement('button');
