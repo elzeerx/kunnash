@@ -8,7 +8,7 @@
 
 ## التحميل
 
-**[⬇︎ حمّل كُنّاش لـmacOS](https://github.com/elzeerx/kunnash/releases/latest)** — الإصدار 0.3.1 · يحتاج macOS 12 فأحدث
+**[⬇︎ حمّل كُنّاش لـmacOS](https://github.com/elzeerx/kunnash/releases/latest)** — الإصدار 0.4.0 · يحتاج macOS 12 فأحدث
 
 افتح ملف `.dmg` واسحب كُنّاش إلى «التطبيقات». التطبيق **موقَّع وموثَّق لدى آبل**، فيفتح بنقرة واحدة بلا تحذيرات.
 
