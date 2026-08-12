@@ -1373,6 +1373,8 @@ async function openSettings() {
   const prof = await window.kunnash.getProfile();
   $('#profile-name').value = prof.name || '';
   $('#ui-lang').value = i18n.getLang();
+  // الافتراض مفعَّل: من لم يختر شيئًا يُخبَر بالتحديث — والغياب لا يعني الرفض
+  $('#update-check').checked = prof.updateCheck !== false;
 
   const c = await window.kunnash.getConnection();
   connServices = c.services || {};
@@ -1406,7 +1408,11 @@ function connectionPatch() {
 
 async function saveSettings(keepOpen) {
   const lang = $('#ui-lang').value;
-  await window.kunnash.saveProfile({ name: $('#profile-name').value.trim(), lang });
+  await window.kunnash.saveProfile({
+    name: $('#profile-name').value.trim(),
+    lang,
+    updateCheck: $('#update-check').checked,
+  });
   if (lang !== i18n.getLang()) {
     i18n.setLang(lang);
     // applyDom يُحدّث ما يحمل data-i18n وحده. وما بُني بجافاسكربت يحمل نصَّ
@@ -1713,6 +1719,22 @@ activationEl.addEventListener('change', () => {
   activationEl.classList.toggle('armed', Boolean(activationEl.value));
 });
 
+// شريط الإصدار الجديد — يخبر ولا يفعل: التحميل بيد صاحبه
+async function checkForUpdate() {
+  let r;
+  try { r = await window.kunnash.checkUpdate(); } catch { return; }
+  if (!r || !r.newer) return;
+  $('#update-text').textContent = i18n.t('updateFound', { version: r.version });
+  const hide = () => {
+    $('#update-bar').classList.add('hidden');
+    document.body.classList.remove('has-update');
+  };
+  $('#btn-update-get').onclick = () => { window.kunnash.openLink(r.url); hide(); };
+  $('#btn-update-close').onclick = hide;
+  $('#update-bar').classList.remove('hidden');
+  document.body.classList.add('has-update');
+}
+
 // البداية
 (async () => {
   const prof = await window.kunnash.getProfile();
@@ -1734,4 +1756,6 @@ activationEl.addEventListener('change', () => {
   populateActivation();
   updateSendState();
   if (!onboarding && workspace) inputEl.focus();
+  // آخر شيء وبلا await: فحصٌ متعثّرُ الشبكة يجب ألّا يؤخّر ظهور التطبيق
+  if (!onboarding) checkForUpdate();
 })();

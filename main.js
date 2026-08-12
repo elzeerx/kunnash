@@ -143,6 +143,20 @@ ipcMain.handle('rules:list', () => core.listRules());
 ipcMain.handle('rules:revoke', (_e, { tool, scope }) => core.revokeRule(tool, scope));
 ipcMain.handle('connection:presets', () => core.PRESETS);
 
+// فحص الإصدار — مرة كل يوم، وبإذنٍ معلن في الإعدادات.
+// يجري في العملية الرئيسية لا في الواجهة، لأن سياسة المحتوى (CSP) تمنع
+// الواجهة من الاتصال بأي مضيف — وهذا حارسٌ لا نثقبه لأجل ميزة.
+const { checkLatest, isDue } = require('./lib/update');
+ipcMain.handle('update:check', async () => {
+  const p = ws.loadProfile();
+  if (p.updateCheck === false) return { newer: false };
+  if (!isDue(p.updateCheckedAt)) return { newer: false };
+  // نختم الوقت **قبل** السؤال لا بعده: لو تعثّرت الشبكة وأعاد المستخدم
+  // الفتح مرارًا، لا يتحول الفحص اليومي إلى طَرْقٍ متكرر على GitHub.
+  ws.saveProfile({ updateCheckedAt: Date.now() });
+  return checkLatest(app.getVersion());
+});
+
 // الربط بضغطة — المفتاح الناتج يُحفظ هنا مباشرة ولا يمر بالواجهة إطلاقًا.
 // KUNNASH_OR_TEST_BASE منفذ اختبار للتطوير: يوجّه التدفق لمحاكاة محلية.
 const OR_TEST_BASE = process.env.KUNNASH_OR_TEST_BASE || null;

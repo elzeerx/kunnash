@@ -7,6 +7,14 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <!-- شريط الإصدار الجديد — يُظهره app.js إن وُجد أحدث، ويُطوى بالإغلاق -->
+  <div id="update-bar" class="update-bar hidden">
+    <span class="update-dot">✦</span>
+    <span id="update-text" class="update-text"></span>
+    <button id="btn-update-get" class="btn-primary" data-i18n="updateGet">حمّل</button>
+    <button id="btn-update-close" class="btn-x" data-i18n-title="updateLater">✕</button>
+  </div>
+
   <div class="app">
 
     <!-- الشريط الجانبي -->
@@ -111,6 +119,12 @@
           <option value="en">English</option>
         </select>
         <p class="modal-note" data-i18n="uiLanguageNote"></p>
+
+        <label class="policy-row">
+          <input id="update-check" type="checkbox" checked />
+          <span data-i18n="updateCheckLabel">أخبرني حين يصدر تحديث</span>
+        </label>
+        <p class="modal-note" data-i18n="updateCheckNote"></p>
       </div>
 
       <h4 class="section-title" data-i18n="memory">ما يتذكره كُنّاش عنك</h4>
