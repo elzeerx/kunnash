@@ -341,3 +341,41 @@ describe('runAgent — النص المحفوظ والعملاء', () => {
     assert.strictEqual(res.usage.calls, 2);
   });
 });
+
+// حدود المستخدم: الوقت والكلفة قراره، والحرّاس الداخليون يتمددون معها
+describe('userLimits', () => {
+  const { userLimits, DEFAULT_LIMITS } = require('../lib/agent/loop');
+
+  test('الافتراض: ١٠ دقائق ودولار واحد', () => {
+    const l = userLimits({});
+    assert.strictEqual(l.timeMs, 10 * 60 * 1000);
+    assert.strictEqual(l.costUsd, 1);
+    assert.strictEqual(l.rounds, DEFAULT_LIMITS.rounds);
+  });
+
+  test('الصفر وقتٌ مفتوح لا غياب', () => {
+    const l = userLimits({ limitTimeMin: 0 });
+    assert.strictEqual(l.timeMs, Infinity);
+  });
+
+  test('أرضية الخيارين: لا أقل من ١٠ دقائق ولا أقل من دولار', () => {
+    const l = userLimits({ limitTimeMin: 3, limitCostUsd: 0.2 });
+    assert.strictEqual(l.timeMs, 10 * 60 * 1000);
+    assert.strictEqual(l.costUsd, 1);
+  });
+
+  test('الحرّاس الداخليون يتمددون بمضاعف الكلفة', () => {
+    // مهمة رضي صاحبها بعشرة دولارات يجب ألا يوقفها حارس ٢٤ جولة —
+    // وبعض المزوّدين لا يبلّغ كلفة فيبقى حارس الرموز هو المالي الفعلي
+    const l = userLimits({ limitCostUsd: 10 });
+    assert.strictEqual(l.rounds, DEFAULT_LIMITS.rounds * 10);
+    assert.strictEqual(l.toolCalls, DEFAULT_LIMITS.toolCalls * 10);
+    assert.strictEqual(l.tokens, DEFAULT_LIMITS.tokens * 10);
+  });
+
+  test('قيمة عبثية تعود للافتراض لا تكسر الحارس', () => {
+    const l = userLimits({ limitCostUsd: 'كثير', limitTimeMin: 'ابد' });
+    assert.strictEqual(l.costUsd, 1);
+    assert.strictEqual(l.timeMs, 10 * 60 * 1000);
+  });
+});

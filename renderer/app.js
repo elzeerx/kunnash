@@ -1375,6 +1375,9 @@ async function openSettings() {
   $('#ui-lang').value = i18n.getLang();
   // الافتراض مفعَّل: من لم يختر شيئًا يُخبَر بالتحديث — والغياب لا يعني الرفض
   $('#update-check').checked = prof.updateCheck !== false;
+  // حدود التشغيل: الافتراض ١٠ دقائق و١$ — والصفر «مفتوح» قيمةٌ مقصودة لا غياب
+  $('#limit-time').value = String(prof.limitTimeMin ?? 10);
+  $('#limit-cost').value = String(prof.limitCostUsd ?? 1);
 
   const c = await window.kunnash.getConnection();
   connServices = c.services || {};
@@ -1412,6 +1415,9 @@ async function saveSettings(keepOpen) {
     name: $('#profile-name').value.trim(),
     lang,
     updateCheck: $('#update-check').checked,
+    limitTimeMin: Number($('#limit-time').value),
+    // الحقل عبثيّ القيمة (فارغ، سالب، نص) يعود للدولار الواحد لا يكسر الحارس
+    limitCostUsd: Math.max(1, Number($('#limit-cost').value) || 1),
   });
   if (lang !== i18n.getLang()) {
     i18n.setLang(lang);

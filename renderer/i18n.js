@@ -62,6 +62,18 @@
     aboutYou:      ['عنك', 'About you'],
     yourName:      ['الاسم الذي تحب أن يناديك به', 'What should it call you'],
     yourNameHint:  ['مثال: نوّاف', 'e.g. Nawaf'],
+    runLimits:     ['حدود التشغيل الواحد', 'Per-run limits'],
+    runLimitsNote: [
+      'حارسان يوقفان الطلب الواحد قبل أن يستنزف وقتك أو رصيدك — والقيمة قرارك. عند التوقف يكفي أن تقول «أكمل» فيتابع من حيث وقف.',
+      'Two guards stop a single run before it drains your time or credit — the values are yours to set. When a run stops, just say "continue" and it picks up where it left off.',
+    ],
+    limitTime:     ['حد الوقت', 'Time limit'],
+    limitCost:     ['حد الكلفة (دولار)', 'Cost limit (USD)'],
+    min10:         ['١٠ دقائق', '10 minutes'],
+    min20:         ['٢٠ دقيقة', '20 minutes'],
+    min30:         ['٣٠ دقيقة', '30 minutes'],
+    min60:         ['ساعة', '1 hour'],
+    minOpen:       ['مفتوح', 'No limit'],
     updateCheckLabel: ['أخبرني حين يصدر تحديث', 'Tell me when an update is out'],
     updateCheckNote: [
       'يسأل GitHub مرةً كل يوم: هل من إصدار أحدث؟ لا يُرسل عنك شيئًا — لا اسمًا ولا معرّفًا ولا إحصاءً — ولا يُنزّل شيئًا ولا يحدّث نفسه؛ يخبرك والتحميل بيدك.',

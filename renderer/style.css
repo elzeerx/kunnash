@@ -1027,3 +1027,7 @@ html, body {
 .update-text { flex: 1; text-align: start; }
 .update-bar .btn-primary { padding: 6px 18px; font-size: 13px; }
 body.has-update { --app-h: calc(100vh - 46px); }
+
+/* حدود التشغيل — حقلان جنبًا إلى جنب */
+.limits-row { display: flex; flex-direction: row; gap: 14px; }
+.limits-row > div { flex: 1; display: flex; flex-direction: column; }
