@@ -31,7 +31,7 @@
 ```bash
 npm install
 npm start
-npm test    # ١٧٦ اختبارًا: حارس المسار والمكتبة والأدوات والأذونات واتجاه النصّ
+npm test    # ١٨٢ اختبارًا: حارس المسار والمكتبة والأدوات والأذونات واتجاه النصّ
 ```
 
 يحتاج Node.js وmacOS.
@@ -91,7 +91,7 @@ lib/connection.js الاتصال بالنموذج — بث SSE لواجهة Open
 lib/core.js      النواة: الجلسات والدردشة — لا تعرف Electron
 lib/library.js   المهارات والعملاء كملفات
 lib/attachments.js المرفقات → أجزاء رسالة
-lib/agent/       حلقة الأدوات: loop (الجولات والحدود) · tools (١٧ أداة) ·
+lib/agent/       حلقة الأدوات: loop (الجولات والحدود) · tools (١٨ أداة) ·
                  permissions (قواعد ذات نطاق) · skills (المحفّز الحتمي) ·
                  registry (تحقق متساهل وإصلاح JSON) · transcript (ذاكرة وتقليم) ·
                  ziplite+office (قراءة xlsx/docx وكتابتها بلا تبعيات)

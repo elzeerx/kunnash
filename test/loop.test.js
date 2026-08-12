@@ -242,7 +242,9 @@ describe('الحدود والدوران', () => {
     script = [call(1), call(2), call(3)];
     const res = await run({ limits: { rounds: 2 } });
     assert.strictEqual(res.stopReason, 'rounds');
-    assert.match(res.text, /حد الجولات/);
+    // الخاتمة تسمّي الحدّ **وتدلّ على مخرج** — فلا يقف المستخدم أمام جدار
+    assert.match(res.text, /الجولات/, 'الخاتمة لا تسمّي الحدّ');
+    assert.match(res.text, /أكمل/, 'الخاتمة لا تدلّ على طريق للمتابعة');
   });
 });
 

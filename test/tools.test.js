@@ -198,3 +198,52 @@ describe('تقليم النص المحفوظ', () => {
     ]));
   });
 });
+
+describe('move_files — النقل دفعةً واحدة', () => {
+  test('ينقل ويعيد التسمية ويُنشئ المجلدات الناقصة', () => {
+    fs.writeFileSync(path.join(root, 'أ.md'), 'محتوى أ');
+    fs.writeFileSync(path.join(root, 'ب.md'), 'محتوى ب');
+    const out = JSON.parse(t('move_files').exec({ moves: [
+      { from: 'أ.md', to: 'أرشيف/2026/أ.md' },
+      { from: 'ب.md', to: 'أرشيف/ب-جديد.md' },
+    ] }, ctx));
+    assert.strictEqual(out.moved, 2);
+    assert.strictEqual(fs.readFileSync(path.join(root, 'أرشيف', '2026', 'أ.md'), 'utf8'), 'محتوى أ');
+    assert.strictEqual(fs.readFileSync(path.join(root, 'أرشيف', 'ب-جديد.md'), 'utf8'), 'محتوى ب');
+  });
+
+  // ملف ثنائي هو سبب وجود الأداة: write_file يكتب نصًّا فيتلفه
+  test('الملف الثنائي ينتقل ببايتاته سليمة', () => {
+    const bytes = Buffer.from([0x50, 0x4b, 0x03, 0x04, 0x00, 0xff, 0xfe, 0x7f]);
+    fs.writeFileSync(path.join(root, 'جدول.xlsx'), bytes);
+    t('move_files').exec({ moves: [{ from: 'جدول.xlsx', to: 'أرقام/جدول.xlsx' }] }, ctx);
+    assert.deepStrictEqual(fs.readFileSync(path.join(root, 'أرقام', 'جدول.xlsx')), bytes);
+  });
+
+  // خطة نصفها ناجح تترك المجلد في حالٍ لا يفهمها أحد
+  test('نقلةٌ فاسدة تُبطل الخطة كلها قبل أن تُنفَّذ', () => {
+    fs.writeFileSync(path.join(root, 'سليم.md'), 'x');
+    assert.throws(() => t('move_files').exec({ moves: [
+      { from: 'سليم.md', to: 'وجهة/سليم.md' },
+      { from: 'لا-يوجد.md', to: 'وجهة/غائب.md' },
+    ] }, ctx));
+    assert.ok(fs.existsSync(path.join(root, 'سليم.md')), 'نُقل رغم فشل الخطة');
+    assert.ok(!fs.existsSync(path.join(root, 'وجهة', 'سليم.md')));
+  });
+
+  test('لا يطمس هدفًا موجودًا', () => {
+    fs.writeFileSync(path.join(root, 'مصدر.md'), 'جديد');
+    fs.writeFileSync(path.join(root, 'قائم.md'), 'قديم');
+    assert.throws(() => t('move_files').exec({ moves: [{ from: 'مصدر.md', to: 'قائم.md' }] }, ctx), /الهدف موجود/);
+    assert.strictEqual(fs.readFileSync(path.join(root, 'قائم.md'), 'utf8'), 'قديم');
+  });
+
+  test('لا يخرج من مساحة العمل', () => {
+    fs.writeFileSync(path.join(root, 'داخلي.md'), 'x');
+    assert.throws(() => t('move_files').exec({ moves: [{ from: 'داخلي.md', to: '../هارب.md' }] }, ctx));
+  });
+
+  test('يطلب إذنًا — والإذن واحد للخطة كلها', () => {
+    assert.strictEqual(t('move_files').permission, 'ask');
+  });
+});
