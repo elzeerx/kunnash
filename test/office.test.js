@@ -112,3 +112,90 @@ describe('html', () => {
     assert.match(html, /dir="rtl"/);
   });
 });
+
+// ما كشفه ملف مستخدم حقيقي: القارئ كان يفترض ترتيب الصفات ويهمل الأنماط
+describe('xlsx — أعطاب من ملفات الواقع', () => {
+  const zip = (extra) => {
+    const file = path.join(tmp(), 'واقعي.xlsx');
+    fs.writeFileSync(file, writeZip([
+      { name: '[Content_Types].xml', data: '<Types/>' },
+      ...extra,
+    ]));
+    return file;
+  };
+
+  test('ترتيب الصفات لا يُفترض: r:id قبل name وTarget قبل Id', () => {
+    // openpyxl وأخواتها تكتب الصفات بترتيب مغاير لإكسل — وXML لا يعد بترتيب
+    const f = zip([
+      { name: 'xl/workbook.xml', data: '<workbook xmlns:r="x"><sheets><sheet r:id="rId1" sheetId="1" name="مقلوبة"/></sheets></workbook>' },
+      { name: 'xl/_rels/workbook.xml.rels', data: '<Relationships><Relationship Target="worksheets/sheet1.xml" Type="ws" Id="rId1"/></Relationships>' },
+      { name: 'xl/worksheets/sheet1.xml', data: '<worksheet><sheetData><row r="1"><c r="A1" t="inlineStr"><is><t>وصلت</t></is></c></row></sheetData></worksheet>' },
+    ]);
+    const [s] = xlsxToCsv(f);
+    assert.strictEqual(s.name, 'مقلوبة');
+    assert.strictEqual(s.csv, 'وصلت');
+  });
+
+  test('التاريخ يخرج تاريخًا لا رقمًا تسلسليًا', () => {
+    // 45870 بنمط تاريخ = 2025-08-01، وبلا نمط يبقى رقمًا كما هو
+    const f = zip([
+      { name: 'xl/workbook.xml', data: '<workbook xmlns:r="x"><sheets><sheet name="ت" sheetId="1" r:id="rId1"/></sheets></workbook>' },
+      { name: 'xl/_rels/workbook.xml.rels', data: '<Relationships><Relationship Id="rId1" Type="ws" Target="worksheets/sheet1.xml"/></Relationships>' },
+      { name: 'xl/styles.xml', data: '<styleSheet><cellXfs count="2"><xf numFmtId="0"/><xf numFmtId="14" applyNumberFormat="1"/></cellXfs></styleSheet>' },
+      { name: 'xl/worksheets/sheet1.xml', data: '<worksheet><sheetData><row r="1"><c r="A1" s="1"><v>45870</v></c><c r="B1"><v>45870</v></c><c r="C1" s="1"><v>45870.75</v></c></row></sheetData></worksheet>' },
+    ]);
+    assert.strictEqual(xlsxToCsv(f)[0].csv, '2025-08-01,45870,2025-08-01 18:00');
+  });
+
+  test('نمط تاريخ مخصص يُكشف من formatCode، والمقتبس لا يخدع', () => {
+    // «"ر.س"» فيها لا حرف تاريخ بعد شطب المقتبس — أما d/m/yyyy فتاريخ
+    const f = zip([
+      { name: 'xl/workbook.xml', data: '<workbook xmlns:r="x"><sheets><sheet name="ت" sheetId="1" r:id="rId1"/></sheets></workbook>' },
+      { name: 'xl/_rels/workbook.xml.rels', data: '<Relationships><Relationship Id="rId1" Type="ws" Target="worksheets/sheet1.xml"/></Relationships>' },
+      { name: 'xl/styles.xml', data: '<styleSheet><numFmts><numFmt numFmtId="164" formatCode="d/m/yyyy"/><numFmt numFmtId="165" formatCode="#,##0.00 &quot;د.ك&quot;"/></numFmts><cellXfs count="3"><xf numFmtId="0"/><xf numFmtId="164"/><xf numFmtId="165"/></cellXfs></styleSheet>' },
+      { name: 'xl/worksheets/sheet1.xml', data: '<worksheet><sheetData><row r="1"><c r="A1" s="1"><v>45870</v></c><c r="B1" s="2"><v>1250.5</v></c></row></sheetData></worksheet>' },
+    ]);
+    assert.strictEqual(xlsxToCsv(f)[0].csv, '2025-08-01,1250.5');
+  });
+
+  test('الصفوف الفارغة تبقى فارغة ولا تُطوى', () => {
+    // طيّها يُزيح ما بعدها: ما في الصف الخامس يُروى أنه في الثاني —
+    // والمستخدم يسأل عن جدوله الذي يراه، بأرقام صفوفه هو
+    const f = zip([
+      { name: 'xl/workbook.xml', data: '<workbook xmlns:r="x"><sheets><sheet name="ف" sheetId="1" r:id="rId1"/></sheets></workbook>' },
+      { name: 'xl/_rels/workbook.xml.rels', data: '<Relationships><Relationship Id="rId1" Type="ws" Target="worksheets/sheet1.xml"/></Relationships>' },
+      { name: 'xl/worksheets/sheet1.xml', data: '<worksheet><sheetData><row r="1"><c r="A1" t="inlineStr"><is><t>أول</t></is></c></row><row r="5"><c r="A5" t="inlineStr"><is><t>خامس</t></is></c></row></sheetData></worksheet>' },
+    ]);
+    assert.strictEqual(xlsxToCsv(f)[0].csv.split('\n').length, 5);
+    assert.strictEqual(xlsxToCsv(f)[0].csv.split('\n')[4], 'خامس');
+  });
+
+  test('اللفظ الصوتي rPh يُشطب من النص المشترك', () => {
+    const f = zip([
+      { name: 'xl/workbook.xml', data: '<workbook xmlns:r="x"><sheets><sheet name="ص" sheetId="1" r:id="rId1"/></sheets></workbook>' },
+      { name: 'xl/_rels/workbook.xml.rels', data: '<Relationships><Relationship Id="rId1" Type="ws" Target="worksheets/sheet1.xml"/></Relationships>' },
+      { name: 'xl/sharedStrings.xml', data: '<sst><si><t>محمد</t><rPh sb="0" eb="2"><t>ムハンマド</t></rPh></si></sst>' },
+      { name: 'xl/worksheets/sheet1.xml', data: '<worksheet><sheetData><row r="1"><c r="A1" t="s"><v>0</v></c></row></sheetData></worksheet>' },
+    ]);
+    assert.strictEqual(xlsxToCsv(f)[0].csv, 'محمد');
+  });
+
+  test('ورقة معلنة بلا محتوى: خطأ يُسمّى لا CSV فارغ يوهم', () => {
+    const f = zip([
+      { name: 'xl/workbook.xml', data: '<workbook xmlns:r="x"><sheets><sheet name="مفقودة" sheetId="1" r:id="rId9"/></sheets></workbook>' },
+      { name: 'xl/_rels/workbook.xml.rels', data: '<Relationships/>' },
+    ]);
+    assert.throws(() => xlsxToCsv(f), /مفقودة/);
+  });
+
+  test('نظام 1904 (ملفات ماك القديمة) يُحترم', () => {
+    const f = zip([
+      { name: 'xl/workbook.xml', data: '<workbook xmlns:r="x"><workbookPr date1904="1"/><sheets><sheet name="م" sheetId="1" r:id="rId1"/></sheets></workbook>' },
+      { name: 'xl/_rels/workbook.xml.rels', data: '<Relationships><Relationship Id="rId1" Type="ws" Target="worksheets/sheet1.xml"/></Relationships>' },
+      { name: 'xl/styles.xml', data: '<styleSheet><cellXfs count="2"><xf numFmtId="0"/><xf numFmtId="14"/></cellXfs></styleSheet>' },
+      { name: 'xl/worksheets/sheet1.xml', data: '<worksheet><sheetData><row r="1"><c r="A1" s="1"><v>44408</v></c></row></sheetData></worksheet>' },
+    ]);
+    // 44408 يومًا من 1904-01-01 = 2025-08-01
+    assert.strictEqual(xlsxToCsv(f)[0].csv, '2025-08-01');
+  });
+});
