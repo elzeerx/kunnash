@@ -89,3 +89,36 @@ describe('الحذف', () => {
     assert.strictEqual(lib.deleteItem(root, 'agent', 'لا-يوجد-اصلا'), false);
   });
 });
+
+describe('الترويسة متعددة الأسطر (YAML مطويّ)', () => {
+  // مهارات كثيرة مكتوبة بعناية تكتب وصفها `description: >` بأسطر مُزاحة —
+  // وقراءة السطر الواحد كانت تُخرج «>» وحدها: وصفٌ فارغ في القائمة، ومحفّز
+  // لا ينطلق أبدًا، وصاحبها لا يدري أنها أُهملت.
+  test('المقياس المطويّ > يُطوى إلى سطر واحد', () => {
+    lib.saveItem(root, 'skill', 'مطوية',
+      '---\nname: مطوية\ndescription: >\n  تُستخدم عند طلب «تقرير شهري»\n  أو «ملخص الشهر» من الملفات.\n---\nمتن');
+    const s = lib.listLibrary(root).skills.find((x) => x.id === 'مطوية');
+    assert.strictEqual(s.description, 'تُستخدم عند طلب «تقرير شهري» أو «ملخص الشهر» من الملفات.');
+  });
+
+  test('المقياس الحرفيّ | يحفظ أسطره', () => {
+    lib.saveItem(root, 'skill', 'حرفية',
+      '---\nname: حرفية\ndescription: |\n  سطر أول\n  وسطر ثانٍ\n---\nمتن');
+    const s = lib.listLibrary(root).skills.find((x) => x.id === 'حرفية');
+    assert.strictEqual(s.description, 'سطر أول\nوسطر ثانٍ');
+  });
+
+  test('الاقتباس المحيط يُنزع ولا يظهر في العرض', () => {
+    lib.saveItem(root, 'skill', 'مقتبسة',
+      '---\nname: "مهارة مقتبسة"\ndescription: \'وصف بين اقتباسين\'\n---\nمتن');
+    const s = lib.listLibrary(root).skills.find((x) => x.id === 'مقتبسة');
+    assert.strictEqual(s.name, 'مهارة مقتبسة');
+    assert.strictEqual(s.description, 'وصف بين اقتباسين');
+  });
+
+  test('السطر المفرد المعتاد كما كان — لا انحدار', () => {
+    lib.saveItem(root, 'skill', 'عادية', '---\nname: عادية\ndescription: وصف عادي\n---\nمتن');
+    const s = lib.listLibrary(root).skills.find((x) => x.id === 'عادية');
+    assert.strictEqual(s.description, 'وصف عادي');
+  });
+});
