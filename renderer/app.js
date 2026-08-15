@@ -511,7 +511,7 @@ function toolLabel(name, input) {
     write_file: i18n.t('tWrite'), edit_file: i18n.t('tEdit'), delete_file: i18n.t('tTrash'),
     read_excel: i18n.t('tExcel'), read_document: i18n.t('tDoc'),
     render_document: i18n.t('tRender'), fetch_url: i18n.t('tFetch'),
-    todo_write: i18n.t('tTodo'), run_agent: i18n.t('tAgent'),
+    todo_write: i18n.t('tTodo'), run_agent: i18n.t('tAgent'), move_files: i18n.t('tMove'),
     list_skills: i18n.t('tSkills'), read_skill: i18n.t('tSkill'),
   };
   if (map[name]) return map[name] + (short ? ': ' + short : '');
@@ -681,25 +681,169 @@ window.kunnash.onNotifyActivate(({ sessionId }) => {
 // ---------- مربع طلب الإذن ----------
 const permModal = $('#permission-modal');
 const permSummaryEl = $('#perm-summary');
-const permDetailsEl = $('#perm-details');
+const permBodyEl = $('#perm-body');
 let permCurrentId = null;
 const permQueue = [];
+
+// ————— جسد بطاقة الإذن —————
+// كان الطلب يُعرض JSON خامًا في <pre>. وخطة نقل فيها خمسون ملفًا تصير كتلةً
+// لا تُقرأ، فيوافق المستخدم بلا فهم — **وإذنٌ لا يُفهم ليس إذنًا**، وهو نقضٌ
+// لمبدأ التطبيق كله لا عيبٌ تجميلي. فلكل أداةٍ ذات أثرٍ عرضٌ يخصّها.
+
+/** مسار في رقاقة — يُقرأ يمينًا ويُعرض بخط الواجهة لا بمونوسبيس يمزّق العربية */
+function pathChip(text) {
+  const el = document.createElement('code');
+  el.className = 'perm-path';
+  el.textContent = text;
+  bidi.setDir(el, text);
+  return el;
+}
+
+function permRow(label, valueEl) {
+  const row = document.createElement('div');
+  row.className = 'perm-row';
+  const k = document.createElement('span');
+  k.className = 'perm-key';
+  k.textContent = label;
+  row.append(k, valueEl);
+  return row;
+}
+
+/** جدول «من ← إلى» لخطة النقل: الخطة كلها بلمحة، والعدد معلن قبلها */
+function moveTable(moves) {
+  const wrap = document.createElement('div');
+  const count = document.createElement('p');
+  count.className = 'perm-count';
+  count.textContent = i18n.count(moves.length,
+    { one: 'نقلة واحدة — راجعها قبل الموافقة', two: 'نقلتان — راجعهما قبل الموافقة',
+      few: '{n} نقلات — راجعها قبل الموافقة', many: '{n} نقلة — راجعها قبل الموافقة' },
+    { one: '1 move — review before approving', other: '{n} moves — review before approving' });
+  wrap.appendChild(count);
+
+  const scroll = document.createElement('div');
+  scroll.className = 'perm-scroll';
+  const table = document.createElement('table');
+  table.className = 'perm-table';
+  const head = table.insertRow();
+  for (const key of ['permFrom', 'permTo']) {
+    const th = document.createElement('th');
+    th.textContent = i18n.t(key);
+    head.appendChild(th);
+  }
+  // سقف عرضٍ لا سقف تنفيذ: الخطة كاملة تُنفَّذ، والمعروض منها ٥٠ صفًا
+  // ثم سطرٌ يقول كم بقي — فلا تتضخم النافذة ولا يُخفى شيء بصمت.
+  const CAP = 50;
+  for (const m of moves.slice(0, CAP)) {
+    const tr = table.insertRow();
+    for (const v of [m && m.from, m && m.to]) {
+      const td = tr.insertCell();
+      td.appendChild(pathChip(String(v == null ? '—' : v)));
+    }
+  }
+  scroll.appendChild(table);
+  wrap.appendChild(scroll);
+  if (moves.length > CAP) {
+    const more = document.createElement('p');
+    more.className = 'perm-more';
+    more.textContent = i18n.count(moves.length - CAP,
+      { one: '… ونقلة أخرى ضمن الخطة نفسها', two: '… ونقلتان أخريان ضمن الخطة نفسها',
+        few: '… و{n} نقلات أخرى ضمن الخطة نفسها', many: '… و{n} نقلة أخرى ضمن الخطة نفسها' },
+      { one: '… and 1 more move in the same plan', other: '… and {n} more moves in the same plan' });
+    wrap.appendChild(more);
+  }
+  return wrap;
+}
+
+/** معاينة نصّ طويل — مقتطعة بعلامة، فلا يُخفى الطول بصمت */
+function preview(text, max = 600) {
+  const el = document.createElement('pre');
+  el.className = 'perm-pre';
+  const s = String(text);
+  el.textContent = s.length > max ? s.slice(0, max) + '…' : s;
+  return el;
+}
+
+function renderPermBody(req) {
+  permBodyEl.innerHTML = '';
+  const input = req.input || {};
+
+  if (req.reason) {
+    const why = document.createElement('p');
+    why.className = 'perm-reason';
+    why.textContent = req.reason;
+    permBodyEl.appendChild(why);
+  }
+
+  switch (req.toolName) {
+    case 'move_files':
+      if (Array.isArray(input.moves)) { permBodyEl.appendChild(moveTable(input.moves)); return; }
+      break;
+    case 'write_file':
+    case 'render_document':
+      if (input.path || input.out_path) {
+        permBodyEl.appendChild(permRow(i18n.t('permFile'), pathChip(input.path || input.out_path)));
+      }
+      if (input.title) permBodyEl.appendChild(permRow(i18n.t('permTitleField'), document.createTextNode(input.title)));
+      if (input.content) permBodyEl.appendChild(preview(input.content));
+      return;
+    case 'edit_file':
+      if (input.path) permBodyEl.appendChild(permRow(i18n.t('permFile'), pathChip(input.path)));
+      if (input.old_text) {
+        const o = preview(input.old_text, 300); o.classList.add('perm-del');
+        permBodyEl.appendChild(o);
+      }
+      if (input.new_text) {
+        const n = preview(input.new_text, 300); n.classList.add('perm-add');
+        permBodyEl.appendChild(n);
+      }
+      return;
+    case 'delete_file':
+      if (input.path) permBodyEl.appendChild(permRow(i18n.t('permFile'), pathChip(input.path)));
+      permBodyEl.appendChild(Object.assign(document.createElement('p'), {
+        className: 'perm-note', textContent: i18n.t('permTrashNote'),
+      }));
+      return;
+    case 'fetch_url':
+      // العنوان بارزٌ وحده: هذا الإذن الوحيد الذي يُخرج شيئًا من الجهاز
+      if (input.url) {
+        const u = document.createElement('div');
+        u.className = 'perm-url';
+        u.textContent = input.url;
+        u.dir = 'ltr';
+        permBodyEl.append(u, Object.assign(document.createElement('p'), {
+          className: 'perm-note', textContent: i18n.t('permFetchNote'),
+        }));
+      }
+      return;
+    default:
+      break;
+  }
+
+  // الافتراضي: مفتاح وقيمة في صفوف — أوضح من JSON ولو لم نعرف الأداة
+  for (const [k, v] of Object.entries(input)) {
+    const val = typeof v === 'string' ? v : JSON.stringify(v);
+    permBodyEl.appendChild(permRow(k, preview(val, 300)));
+  }
+}
+
+/** عنوان الطلب بلغة المستخدم — واسم الأداة الخام آخر ملاذ لا أوّل خيار */
+function permTitle(req) {
+  const t = {
+    move_files: 'permAskMove', write_file: 'permAskWrite', render_document: 'permAskWrite',
+    edit_file: 'permAskEdit', delete_file: 'permAskDelete', fetch_url: 'permAskFetch',
+    save_skill: 'permAskSkill',
+  }[req.toolName];
+  if (t) return i18n.t(t);
+  return req.summary || i18n.t('toolRequest', { tool: req.toolName });
+}
 
 function showNextPermission() {
   if (permCurrentId || permQueue.length === 0) return;
   const req = permQueue.shift();
   permCurrentId = req.id;
-  permSummaryEl.textContent = req.title || req.summary || i18n.t('toolRequest', { tool: req.toolName });
-  let details = '';
-  if (req.reason) details += req.reason + '\n';
-  try {
-    const input = req.input || {};
-    for (const [k, v] of Object.entries(input)) {
-      const val = typeof v === 'string' ? v : JSON.stringify(v);
-      details += `${k}: ${String(val).slice(0, 400)}\n`;
-    }
-  } catch { /* تجاهل */ }
-  permDetailsEl.textContent = details.trim();
+  // عنوانٌ بلغة المستخدم لا باسم الأداة الخام: «move_files» ليست كلامًا
+  permSummaryEl.textContent = permTitle(req);
+  try { renderPermBody(req); } catch { permBodyEl.textContent = ''; }
   // ما ستحفظه «دائمًا» بالضبط — فلا يوقّع المستخدم على بياض
   const scopeEl = $('#perm-scope');
   if (req.alwaysScope) {
@@ -1143,13 +1287,64 @@ window.kunnash.onChatEvent('chat:tool', ({ requestId, name, input }) => {
   run.tools.push(label);
   updateRunStatus();
   if (run.els) {
-    const chip = document.createElement('span');
-    chip.className = 'tool-chip';
-    chip.textContent = label;
-    run.els.tools.appendChild(chip);
+    // خطة المهام تُرسم صفوفًا لا رقاقةً: النموذج كان يكتبها بـtodo_write
+    // **ولا يراها أحد** — أداةٌ تعمل وأثرُها محجوب عن صاحب العمل.
+    if (name === 'todo_write' && Array.isArray(input && input.items)) {
+      run.els.tools.appendChild(taskRows(input.items));
+    } else {
+      run.els.tools.appendChild(toolChip(name, label));
+    }
     scrollDown();
   }
 });
+
+/** رقاقة أداة: أيقونتها منفصلة عن نصّها فلا ينقلب ترتيبهما مع اتجاه الجملة */
+function toolChip(name, label) {
+  const chip = document.createElement('span');
+  chip.className = 'tool-chip';
+  const m = label.match(/^(\p{Extended_Pictographic}️?|🔧)\s*([\s\S]*)$/u);
+  if (m) {
+    const icon = document.createElement('span');
+    icon.className = 'chip-icon';
+    icon.textContent = m[1];
+    const text = document.createElement('span');
+    text.className = 'chip-text';
+    text.textContent = m[2];
+    bidi.setDir(text, m[2]);
+    chip.append(icon, text);
+  } else {
+    chip.textContent = label;
+  }
+  chip.title = name;
+  return chip;
+}
+
+/** صفوف خطة المهام — أول بند «جارٍ» وما بعده منتظر */
+function taskRows(items) {
+  const box = document.createElement('div');
+  box.className = 'task-rows';
+  const head = document.createElement('div');
+  head.className = 'task-head';
+  head.textContent = i18n.count(items.length,
+    { one: 'خطة العمل — خطوة واحدة', two: 'خطة العمل — خطوتان',
+      few: 'خطة العمل — {n} خطوات', many: 'خطة العمل — {n} خطوة' },
+    { one: 'Plan — 1 step', other: 'Plan — {n} steps' });
+  box.appendChild(head);
+  items.forEach((it, i) => {
+    const row = document.createElement('div');
+    row.className = 'task-row' + (i === 0 ? ' active' : '');
+    const dot = document.createElement('span');
+    dot.className = 'task-dot';
+    dot.textContent = i === 0 ? '◆' : '◇';
+    const txt = document.createElement('span');
+    txt.className = 'task-text';
+    txt.textContent = String(it);
+    bidi.setDir(txt, String(it));
+    row.append(dot, txt);
+    box.appendChild(row);
+  });
+  return box;
+}
 
 window.kunnash.onChatEvent('chat:done', ({ requestId, text, usage }) => {
   const run = runs.get(requestId);

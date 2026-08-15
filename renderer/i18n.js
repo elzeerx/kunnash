@@ -228,6 +228,19 @@
     tRender:     ['🖨️ يُخرج مستندًا', '🖨️ Producing a document'],
     tFetch:      ['🌐 يفتح رابطًا', '🌐 Opening a link'],
     tTodo:       ['📋 ينظّم المهام', '📋 Organizing tasks'],
+    tMove:       ['🗂 ينقل الملفات', '🗂 Moving files'],
+    permAskMove:   ['يريد نقل ملفات في مجلدك', 'It wants to move files in your folder'],
+    permAskWrite:  ['يريد كتابة ملف في مجلدك', 'It wants to write a file in your folder'],
+    permAskEdit:   ['يريد تعديل ملف في مجلدك', 'It wants to edit a file in your folder'],
+    permAskDelete: ['يريد حذف ملف', 'It wants to delete a file'],
+    permAskFetch:  ['يريد جلب صفحة من الإنترنت', 'It wants to fetch a page from the internet'],
+    permAskSkill:  ['يريد حفظ مهارة في مكتبتك', 'It wants to save a skill to your library'],
+    permFrom:      ['من', 'From'],
+    permTo:        ['إلى', 'To'],
+    permFile:      ['الملف', 'File'],
+    permTitleField: ['العنوان', 'Title'],
+    permTrashNote: ['يذهب إلى المهملات — يُسترجع منها', 'Goes to the trash — recoverable from there'],
+    permFetchNote: ['هذا الإذن الوحيد الذي يُرسل طلبًا خارج جهازك', 'This is the only permission that sends a request off your device'],
     tSkills:     ['⚡ يستعرض المهارات', '⚡ Browsing skills'],
     tSkill:      ['⚡ يقرأ مهارة', '⚡ Reading a skill'],
     tAgent:      ['🤖 يشغّل عميلًا جانبيًا', '🤖 Running a side agent'],
@@ -277,6 +290,29 @@
   function getLang() { return lang; }
   function dirOf(l) { return l === 'ar' ? 'rtl' : 'ltr'; }
 
+  /** الرقم بأرقام لغته — العربية تكتب ٤ لا 4 داخل جملتها */
+  const AR_DIGITS = '٠١٢٣٤٥٦٧٨٩';
+  function num(n) {
+    return lang === 'ar' ? String(n).replace(/\d/g, (d) => AR_DIGITS[+d]) : String(n);
+  }
+
+  /**
+   * عددٌ معدودٌ بصيغته الصحيحة.
+   * العربية لا تجمع كالإنجليزية: الواحد والاثنان لهما صيغتاهما، و٣–١٠ جمعٌ
+   * («٤ نقلات»)، وما فوق العشرة يعود مفردًا («١١ نقلة»). فـ«4 نقلة» خطأ
+   * مضاعف — رقمٌ لاتيني وجمعٌ إنجليزي في جملة عربية.
+   * @param {number} n
+   * @param {{one:string, two:string, few:string, many:string}} ar صيغ العربية
+   * @param {{one:string, other:string}} en صيغتا الإنجليزية
+   */
+  function count(n, ar, en) {
+    const fill = (s) => s.split('{n}').join(num(n));
+    if (lang !== 'ar') return fill(n === 1 ? en.one : en.other);
+    if (n === 1) return fill(ar.one);
+    if (n === 2) return fill(ar.two);
+    return fill(n % 100 >= 3 && n % 100 <= 10 ? ar.few : ar.many);
+  }
+
   /** يملأ كل عنصر يحمل data-i18n — النص أو الـplaceholder أو الـtitle */
   function applyDom(scope) {
     const el = scope || document;
@@ -301,5 +337,5 @@
   // — ولو تعثّر شيء قبله لشُحنت واجهة بلا نصوص. الافتراض قبل التفضيل.
   if (typeof document !== 'undefined') applyDom();
 
-  return { t, setLang, getLang, dirOf, applyDom, LANGS, STRINGS: S };
+  return { t, setLang, getLang, dirOf, applyDom, num, count, LANGS, STRINGS: S };
 });

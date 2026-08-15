@@ -836,7 +836,47 @@ html, body {
   padding: 12px 14px;
   margin-bottom: 10px;
 }
-.perm-details {
+/* ————— جسد بطاقة الإذن —————
+   حلّ محلّ <pre> يعرض JSON خامًا: لكل أداةٍ ذات أثرٍ عرضٌ يخصّها، لأن
+   إذنًا لا يُفهم ليس إذنًا. */
+.perm-body { margin-bottom: 16px; text-align: start; }
+.perm-body:empty { display: none; }
+
+.perm-reason { font-size: 12.5px; color: var(--muted); line-height: 1.7; margin-bottom: 10px; }
+.perm-note { font-size: 11.5px; color: var(--muted); margin-top: 8px; }
+.perm-count { font-size: 12.5px; font-weight: 600; color: var(--accent-strong); margin-bottom: 8px; }
+.perm-more { font-size: 11.5px; color: var(--muted); margin-top: 6px; }
+
+.perm-row { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
+.perm-key { font-size: 11.5px; color: var(--muted); flex: none; }
+
+/* المسار بخط الواجهة لا بمونوسبيس: المونوسبيس يمزّق العربية ويمطّها */
+.perm-path {
+  font-family: 'IBM Plex Sans Arabic', sans-serif;
+  font-size: 12px;
+  background: var(--code-bg);
+  border-radius: 6px;
+  padding: 2px 7px;
+  unicode-bidi: isolate;
+  word-break: break-word;
+}
+
+.perm-scroll { max-height: 220px; overflow: auto; border: 1px solid var(--line); border-radius: 10px; }
+.perm-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.perm-table th {
+  position: sticky; top: 0;
+  background: var(--accent-wash);
+  color: var(--accent-strong);
+  font-size: 11px;
+  font-weight: 600;
+  text-align: start;
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--accent-line);
+}
+.perm-table td { padding: 6px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.perm-table tr:last-child td { border-bottom: none; }
+
+.perm-pre {
   font-family: 'IBM Plex Sans Arabic', ui-monospace, monospace;
   font-size: 11.5px;
   color: var(--muted);
@@ -849,9 +889,21 @@ html, body {
   unicode-bidi: plaintext;
   text-align: start;
   white-space: pre-wrap;
-  margin-bottom: 16px;
+  flex: 1;
 }
-.perm-details:empty { display: none; }
+.perm-add { border-inline-start: 3px solid var(--ok); background: var(--ok-wash); }
+.perm-del { border-inline-start: 3px solid var(--danger); background: var(--danger-wash); }
+
+/* العنوان بارزٌ وحده — هذا الإذن الوحيد الذي يُخرج طلبًا من الجهاز */
+.perm-url {
+  font-size: 12.5px;
+  background: var(--code-bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 9px 11px;
+  word-break: break-all;
+  text-align: start;
+}
 .perm-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .perm-actions .btn-primary { flex: 1; }
 .btn-ghost-dark {
@@ -1031,3 +1083,24 @@ body.has-update { --app-h: calc(100vh - 46px); }
 /* حدود التشغيل — حقلان جنبًا إلى جنب */
 .limits-row { display: flex; flex-direction: row; gap: 14px; }
 .limits-row > div { flex: 1; display: flex; flex-direction: column; }
+
+/* ————— صفوف خطة المهام (todo_write) ————— */
+.task-rows {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin: 6px 0;
+  max-width: 520px;
+}
+.task-head { font-size: 11px; font-weight: 600; color: var(--muted); margin-bottom: 7px; }
+.task-row { display: flex; align-items: baseline; gap: 9px; font-size: 12.5px; line-height: 1.8; color: var(--muted); }
+.task-row.active { color: var(--ink); font-weight: 500; }
+.task-dot { flex: none; color: var(--accent-soft); font-size: 10px; }
+.task-row.active .task-dot { color: var(--accent); }
+.task-text { flex: 1; text-align: start; unicode-bidi: isolate; }
+
+/* رقاقة الأداة: الأيقونة معزولة عن النصّ فلا ينقلب ترتيبهما مع الاتجاه */
+.tool-chip { display: inline-flex; align-items: baseline; gap: 6px; }
+.tool-chip .chip-icon { flex: none; }
+.tool-chip .chip-text { unicode-bidi: isolate; }

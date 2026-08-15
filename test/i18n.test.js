@@ -80,3 +80,43 @@ describe('السلوك', () => {
     assert.strictEqual(i18n.dirOf('en'), 'ltr');
   });
 });
+
+// العدد المعدود — العربية لا تجمع كالإنجليزية
+describe('count', () => {
+  const AR = { one: 'نقلة واحدة', two: 'نقلتان', few: '{n} نقلات', many: '{n} نقلة' };
+  const EN = { one: '1 move', other: '{n} moves' };
+
+  test('العربية: الواحد والاثنان صيغتاهما، و٣–١٠ جمعٌ، وما فوقها مفرد', () => {
+    i18n.setLang('ar');
+    assert.strictEqual(i18n.count(1, AR, EN), 'نقلة واحدة');
+    assert.strictEqual(i18n.count(2, AR, EN), 'نقلتان');
+    assert.strictEqual(i18n.count(3, AR, EN), '٣ نقلات');
+    assert.strictEqual(i18n.count(10, AR, EN), '١٠ نقلات');
+    assert.strictEqual(i18n.count(11, AR, EN), '١١ نقلة', 'ما فوق العشرة يعود مفردًا');
+    assert.strictEqual(i18n.count(50, AR, EN), '٥٠ نقلة');
+  });
+
+  // «4 نقلة» خطأ مضاعف: رقمٌ لاتيني وجمعٌ إنجليزي في جملة عربية
+  test('الأرقام عربية داخل الجملة العربية لا لاتينية', () => {
+    i18n.setLang('ar');
+    assert.match(i18n.count(4, AR, EN), /^٤ /);
+    assert.ok(!/\d/.test(i18n.count(2026, AR, EN)), 'لا رقم لاتيني يتسرب');
+    assert.strictEqual(i18n.num(2026), '٢٠٢٦');
+  });
+
+  test('الإنجليزية صيغتان لا أربع، وأرقامها لاتينية', () => {
+    i18n.setLang('en');
+    assert.strictEqual(i18n.count(1, AR, EN), '1 move');
+    assert.strictEqual(i18n.count(2, AR, EN), '2 moves');
+    assert.strictEqual(i18n.count(7, AR, EN), '7 moves');
+    assert.strictEqual(i18n.num(2026), '2026');
+    i18n.setLang('ar');
+  });
+
+  // ١٠٣ ينتهي بـ٣ فيجمع، و١١١ ينتهي بـ١١ فيُفرد — العبرة بالمئوية لا بالآحاد
+  test('المئات تُحسب بباقي المئة', () => {
+    i18n.setLang('ar');
+    assert.strictEqual(i18n.count(103, AR, EN), '١٠٣ نقلات');
+    assert.strictEqual(i18n.count(111, AR, EN), '١١١ نقلة');
+  });
+});
