@@ -31,7 +31,7 @@
 ```bash
 npm install
 npm start
-npm test    # ٢٠٥ اختبارات: حارس المسار والمكتبة والأدوات والأذونات واتجاه النصّ
+npm test    # ٢١٠ اختبارات: حارس المسار والمكتبة والأدوات والأذونات واتجاه النصّ
 ```
 
 يحتاج Node.js وmacOS.
@@ -92,7 +92,7 @@ lib/paths.js     حارس المسار — الموضع الوحيد الذي ي
 lib/connection.js الاتصال بالنموذج — بث SSE لواجهة OpenAI-compatible
 lib/core.js      النواة: الجلسات والدردشة — لا تعرف Electron
 lib/library.js   المهارات والعملاء كملفات
-lib/attachments.js المرفقات → أجزاء رسالة
+lib/attachments.js المرفقات → أجزاء رسالة (نصّ وصور وxlsx وdocx)
 lib/agent/       حلقة الأدوات: loop (الجولات والحدود) · tools (١٨ أداة) ·
                  permissions (قواعد ذات نطاق) · skills (المحفّز الحتمي) ·
                  registry (تحقق متساهل وإصلاح JSON) · transcript (ذاكرة وتقليم) ·
