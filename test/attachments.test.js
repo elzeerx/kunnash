@@ -55,11 +55,29 @@ describe('المرفقات', () => {
     });
   });
 
-  // ما لم يُبنَ له مفكّك يبقى مرفوضًا برسالة تدلّ على المخرج — لا يُدّعى دعمه
-  test('PDF ما زال مرفوضًا برسالة تقترح بديلًا', () => {
-    const file = path.join(tmp(), 'ورقة.pdf');
-    fs.writeFileSync(file, '%PDF-1.4');
-    assert.throws(() => buildMessageParts([file]), /لم تُبنَ بعد/);
+  // ما لم يُبنَ له مفكّك يبقى مرفوضًا — والرفض يُقاس بما يفيد المستخدم:
+  // أي ملف، وأي صيغة، وما المخرج. لا بصياغةٍ بعينها.
+  test('ما لا مفكّك له يُرفض برسالة تسمّي الملف وتدلّ على مخرج', () => {
+    const dir = tmp();
+    for (const [name, way] of [['ورقة.pdf', /نصًّا|Word/], ['شرائح.pptx', /PDF|نصّ/], ['قديم.xls', /xlsx/]]) {
+      const file = path.join(dir, name);
+      fs.writeFileSync(file, 'x');
+      assert.throws(() => buildMessageParts([file]), (e) => {
+        assert.match(e.message, new RegExp(name.split('.')[0]), 'يسمّي الملف');
+        assert.match(e.message, way, 'ويقترح مخرجًا عمليًا');
+        return true;
+      }, name);
+    }
+  });
+
+  // الطريقان يقرران الدعم من جدول واحد — وافتراقهما هو العطب الأصلي
+  test('ما يقبله المرفق هو ما يقبله جدول الأنواع', () => {
+    const { kindOf } = require('../lib/filetypes');
+    assert.strictEqual(kindOf('a.xlsx'), 'sheet');
+    assert.strictEqual(kindOf('a.docx'), 'doc');
+    assert.strictEqual(kindOf('a.png'), 'image');
+    assert.strictEqual(kindOf('a.py'), 'text', 'الشيفرة نصّ كسائر النصّ');
+    assert.strictEqual(kindOf('a.pdf'), 'unsupported');
   });
 
   test('النصّ والصورة يمرّان كما كانا', () => {

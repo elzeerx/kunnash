@@ -358,7 +358,11 @@ function addAssistantShell(metaLabel) {
 }
 
 // ---------- روابط قابلة للنقر في الردود ----------
-const FILE_EXTS = 'docx?|xlsx?|pptx?|pdf|html?|md|csv|txt|png|jpe?g|webp|json|heic|mov|mp4';
+// ما يُعرض للاختيار هو ما يُقرأ فعلًا — القائمة كانت تعِد بـpdf وheic وmov
+// ثم يرفضها المحرّك عند الإرسال. والمصدر الآن lib/filetypes.js نفسه.
+const FILE_EXTS = 'txt|md|markdown|csv|tsv|json|jsonl|html?|xml|ya?ml|log|ini|conf|toml|srt|vtt'
+  + '|m?js|cjs|tsx?|jsx|css|scss|py|rb|go|rs|java|kt|swift|c|h|cpp|php|sh|sql'
+  + '|xlsx|docx|png|jpe?g|webp|gif|env|gitignore';
 // جذور المسارات المعروفة — مطلق، أو منزلي، أو نسبي. أسماء المجلدات داخل مساحة
 // العمل تختلف من مستخدم لآخر، فالامتداد وحده هو ما يحسم بقيتها (انظر أدناه).
 const KNOWN_ROOTS = /^(\/Users\/|~\/|\.{1,2}\/)/;
