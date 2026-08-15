@@ -337,10 +337,19 @@ html, body {
   box-shadow: 0 8px 32px var(--overlay); padding: 6px; min-width: 280px; max-width: 420px;
 }
 .ws-item {
-  display: block; width: 100%; text-align: start; background: none; border: none;
+  display: flex; align-items: center; gap: 8px; width: 100%; text-align: start;
+  background: none; border: none;
   border-radius: 8px; padding: 8px 10px; cursor: pointer; font-family: inherit; color: var(--ink);
 }
 .ws-item:hover { background: var(--accent-wash); }
+.ws-main { flex: 1; min-width: 0; }
+/* زر إزالة الوصول — يظهر عند المرور كزرّ حذف المحادثة، فالنمط مألوف */
+.ws-forget {
+  flex: none; visibility: hidden; color: var(--muted);
+  font-size: 12px; padding: 2px 6px; border-radius: 6px;
+}
+.ws-item:hover .ws-forget { visibility: visible; }
+.ws-forget:hover { color: var(--danger); background: var(--danger-wash); }
 .ws-item strong { display: block; font-size: 13px; }
 .ws-item span {
   display: block; font-size: 10.5px; color: var(--muted); direction: ltr; text-align: start;

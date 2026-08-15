@@ -37,3 +37,37 @@ describe('دلالات حفظ الاتصال', () => {
     assert.throws(() => ws.requireWorkspace(), /لم تُختر مساحة عمل/);
   });
 });
+
+describe('إزالة الوصول لمساحة عمل', () => {
+  // الثغرة: workspace:forget كانت تشيل المساحة من القائمة، فإن كانت
+  // **الحالية** بقي التطبيق عاملًا عليها ويعيدها الإقلاع التالي من
+  // `workspace` المحفوظ — إزالةٌ تكذب على صاحبها.
+  test('إزالة غير الحالية: تُشال والحالية باقية', () => {
+    const a = fs.mkdtempSync(path.join(os.tmpdir(), 'kunnash-ws-a-'));
+    const b = fs.mkdtempSync(path.join(os.tmpdir(), 'kunnash-ws-b-'));
+    ws.setWorkspace(a);
+    ws.setWorkspace(b);
+    const res = ws.forgetWorkspace(a);
+    assert.strictEqual(res.wasCurrent, false);
+    assert.ok(!ws.listWorkspaces().some((w) => w.path === a));
+    assert.strictEqual(ws.getWorkspace(), b);
+  });
+
+  test('إزالة الحالية: تُصفَّر ولا يعيدها الإقلاع', () => {
+    const c = fs.mkdtempSync(path.join(os.tmpdir(), 'kunnash-ws-c-'));
+    ws.setWorkspace(c);
+    const res = ws.forgetWorkspace(c);
+    assert.strictEqual(res.wasCurrent, true);
+    assert.strictEqual(ws.getWorkspace(), null, 'الحالية تُصفَّر فورًا');
+    assert.throws(() => ws.requireWorkspace(), /لم تُختر/);
+    assert.strictEqual(ws.listWorkspaces().some((w) => w.path === c), false);
+  });
+
+  test('الإزالة لا تمس ملفات المجلد نفسه', () => {
+    const d = fs.mkdtempSync(path.join(os.tmpdir(), 'kunnash-ws-d-'));
+    fs.writeFileSync(path.join(d, 'ملف.txt'), 'محتوى');
+    ws.setWorkspace(d);
+    ws.forgetWorkspace(d);
+    assert.strictEqual(fs.readFileSync(path.join(d, 'ملف.txt'), 'utf8'), 'محتوى');
+  });
+});

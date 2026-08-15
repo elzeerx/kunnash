@@ -121,7 +121,8 @@ describe('مساحات عمل متعددة', () => {
     fs.rmSync(b, { recursive: true });
     assert.strictEqual(ws.listWorkspaces().find((w) => w.path === b).missing, true);
 
-    assert.strictEqual(ws.forgetWorkspace(b), true);
+    // العقد الجديد: يرجع {wasCurrent} — فالواجهة تعرف هل تعيد الإقلاع
+    assert.strictEqual(ws.forgetWorkspace(b).wasCurrent, false);
     assert.ok(!ws.listWorkspaces().some((w) => w.path === b));
   });
 
