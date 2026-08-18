@@ -1540,9 +1540,10 @@ async function renderRules() {
     const row = document.createElement('div');
     row.className = 'pref-row';
     const txt = document.createElement('span');
-    txt.innerHTML = '<b></b> <span dir="ltr"></span><i></i>';
-    txt.querySelector('b').textContent = r.tool;
-    txt.querySelector('span').textContent = r.scope;
+    txt.innerHTML = '<b></b><i></i>';
+    // الوصف يأتي مصوغًا من النواة — واسم الأداة الخام يبقى في التلميح لمن يريده
+    txt.querySelector('b').textContent = r.label || `${r.tool} — ${r.scope}`;
+    txt.title = `${r.tool} · ${r.scope}`;
     if (r.expiresAt) {
       const days = Math.max(0, Math.ceil((r.expiresAt - Date.now()) / 86400000));
       txt.querySelector('i').textContent = i18n.t('expiresIn', { n: days });

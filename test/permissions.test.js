@@ -243,7 +243,11 @@ describe('البوابة في الحلقة الحقيقية', () => {
     ];
     let seenScope = null;
     await run((req) => { seenScope = req.alwaysScope; return 'always'; });
-    assert.match(seenScope, /write_file في خاص\/\*\*/, 'لم يُعرض النطاق قبل الحفظ');
+    // يُقاس المعنى لا الصياغة: هل يعرف المستخدم **ماذا** يسمح و**أين** قبل
+    // أن يضغط؟ (كان الوصف «write_file في خاص/**» — اسم دالةٍ ورمزٌ لا يُفهمان)
+    assert.match(seenScope, /خاص/, 'لم يُسمَّ المجلد الذي ستغطيه القاعدة');
+    assert.match(seenScope, /كتابة|الكتابة/, 'لم يُذكر الفعل الذي يُسمح به');
+    assert.ok(!/write_file|\*\*/.test(seenScope), 'الإفصاح بلغة المبرمجين لا بلغة صاحبه');
 
     const rules = perms.load(wroot);
     assert.strictEqual(rules.length, 1);
@@ -326,5 +330,68 @@ describe('حقن المهارة في runAgent', () => {
     const res = await go('أي شيء', 'غير-موجودة');
     assert.strictEqual(res.injectedSkill, null);
     assert.strictEqual(res.text, 'تم');
+  });
+});
+
+// ————— ما كشفه فحص التطبيق —————
+describe('اشتقاق نطاق النقل ووضوح الإفصاح', () => {
+  const os = require('node:os');
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'kn-scope-'));
+  const scopeOf = (moves) => {
+    const d = perms.deriveScope('move_files', { moves }, root);
+    return d && d.scope;
+  };
+
+  // كان move_files بلا اشتقاق: «السماح دائمًا» عليه يمنح نقلًا غير محصور
+  // لبقية التشغيل — يوافق المستخدم على خطةٍ في «تقارير/» فيصير كل شيء مباحًا
+  test('النقل صار له نطاق بعد أن كان بلا نطاق', () => {
+    assert.strictEqual(scopeOf([{ from: 'تقارير/أ.md', to: 'تقارير/ب.md' }]), 'تقارير/**');
+  });
+
+  // النقل يمسّ طرفين: نطاقه ما يسع المصدر والهدف معًا، لا أحدهما
+  test('النطاق يسع طرفي كل نقلة', () => {
+    assert.strictEqual(
+      scopeOf([{ from: 'تقارير/٢٠٢٥/أ.md', to: 'تقارير/٢٠٢٦/ب.md' }]),
+      'تقارير/**', 'الأب المشترك يسع الطرفين',
+    );
+    assert.strictEqual(
+      scopeOf([{ from: 'تقارير/أ.md', to: 'مالية/ب.md' }]),
+      '**', 'مجلدان لا جامع لهما إلا الجذر',
+    );
+  });
+
+  test('كل نقلات الخطة تدخل الحساب لا أولاها', () => {
+    const s = scopeOf([
+      { from: 'تقارير/أ.md', to: 'تقارير/ب.md' },
+      { from: 'تقارير/ج.md', to: 'مالية/د.md' },   // هذه وحدها توسّع النطاق
+    ]);
+    assert.strictEqual(s, '**', 'نقلةٌ خارجة توسّع النطاق فلا يُخفى اتساعه');
+  });
+
+  test('خطة ناقصة لا يُشتق لها نطاق فلا يُعرض «دائمًا»', () => {
+    // المهم أن لا نطاق يُشتق — فلا تُحفظ قاعدة على خطةٍ لا تُفهم حدودها
+    assert.ok(!perms.deriveScope('move_files', { moves: [] }, root));
+    assert.ok(!perms.deriveScope('move_files', { moves: [{ from: 'أ.md' }] }, root));
+    assert.ok(!perms.deriveScope('move_files', {}, root));
+  });
+
+  // «delete_file في **» تحت أخطر زرٍّ في التطبيق: اسمُ دالةٍ ورمزٌ لا يفهمهما
+  // إلا مبرمج — و«**» تعني «كل مساحة عملك إلى الأبد»
+  test('الإفصاح بلغة صاحبه: لا أسماء دوالّ ولا رموز', () => {
+    for (const [tool, scope, kind] of [
+      ['delete_file', '**', 'file'],
+      ['write_file', 'تقارير/**', 'file'],
+      ['move_files', '**', 'file'],
+      ['fetch_url', 'https://example.com', 'net'],
+    ]) {
+      const d = perms.describe(tool, scope, kind);
+      assert.ok(!/_/.test(d), `«${d}» فيه اسم دالة`);
+      assert.ok(!/\*/.test(d), `«${d}» فيه رمز glob`);
+    }
+  });
+
+  test('«**» تُقال صراحةً: كل مساحة عملك', () => {
+    assert.match(perms.describe('delete_file', '**', 'file'), /كل مساحة عملك/);
+    assert.match(perms.describe('write_file', 'تقارير/**', 'file'), /«تقارير»/);
   });
 });

@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
-const { TOOL_MAP, globToRegex, assertPublicUrl } = require('../lib/agent/tools');
+const { TOOL_MAP, globToRegex } = require('../lib/agent/tools');
 const transcript = require('../lib/agent/transcript');
 const { validateArgs, parseArgs } = require('../lib/agent/registry');
 const { forgetRoot } = require('../lib/paths');
@@ -128,18 +128,54 @@ describe('البحث والعثور', () => {
 });
 
 describe('حارس fetch_url', () => {
-  test('العناوين الداخلية والبروتوكولات الغريبة مرفوضة', () => {
+  const { checkUrl, isPrivateIp } = require('../lib/agent/safefetch');
+
+  test('العناوين الداخلية والبروتوكولات الغريبة مرفوضة', async () => {
     for (const bad of [
       'http://localhost:11434/x', 'http://127.0.0.1/x', 'http://10.0.0.5/x',
       'http://192.168.1.1/x', 'http://172.20.3.4/x', 'http://169.254.1.1/x',
       'http://server.local/x', 'file:///etc/passwd', 'ftp://x.com/f',
     ]) {
-      assert.throws(() => assertPublicUrl(bad), Error, bad);
+      await assert.rejects(() => checkUrl(bad), Error, bad);
     }
   });
-  test('العناوين العامة تمر', () => {
-    assert.ok(assertPublicUrl('https://example.org/صفحة'));
-    assert.ok(assertPublicUrl('http://172.15.0.1/ok'));   // خارج نطاق 172.16-31 الخاص
+
+  // صيغتان كانتا تمرّان من الحارس النصّي القديم
+  test('الصيغ الملتوية للعنوان المحلي مرفوضة', async () => {
+    for (const bad of [
+      'http://[::ffff:127.0.0.1]/x',   // IPv4 مغلَّف في IPv6
+      'http://LOCALHOST./x',           // نقطة لاحقة
+      'http://[::1]/x',
+      'http://0.0.0.0/x',
+      'http://100.64.0.1/x',           // CGNAT
+    ]) {
+      await assert.rejects(() => checkUrl(bad), Error, bad);
+    }
+  });
+
+  test('العناوين العامة تمر', async () => {
+    assert.ok(await checkUrl('http://172.15.0.1/ok'));   // خارج نطاق 172.16-31 الخاص
+    assert.ok(await checkUrl('http://8.8.8.8/ok'));
+  });
+
+  // العطب المُثبَت: اسمٌ عامٌّ مسجَّل يُترجَم إلى 127.0.0.1 كان يمرّ ويصل
+  // خادمًا محليًّا. الفحص الآن على العنوان المُترجَم لا على الاسم.
+  test('اسمٌ عامٌّ يُترجَم إلى الجهاز يُمنع بعنوانه لا باسمه', async () => {
+    await assert.rejects(() => checkUrl('http://localtest.me/x'), (e) => {
+      assert.match(e.message, /127\.0\.0\.1|داخلي/, 'الرسالة تسمّي العنوان المكشوف');
+      return true;
+    });
+  });
+
+  test('تصنيف العناوين: الخاص خاصٌّ والعام عام', () => {
+    for (const ip of ['127.0.0.1', '10.1.2.3', '192.168.0.1', '169.254.169.254',
+      '172.16.0.1', '::1', 'fe80::1', 'fd00::1', '::ffff:127.0.0.1', '0.0.0.0']) {
+      assert.strictEqual(isPrivateIp(ip), true, ip);
+    }
+    for (const ip of ['8.8.8.8', '1.1.1.1', '172.15.0.1', '2606:4700::1111']) {
+      assert.strictEqual(isPrivateIp(ip), false, ip);
+    }
+    assert.strictEqual(isPrivateIp('ليس عنوانًا'), true, 'ما لا نعرفه نمنعه');
   });
 });
 

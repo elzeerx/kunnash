@@ -31,7 +31,7 @@
 ```bash
 npm install
 npm start
-npm test    # ٢٢٢ اختبارًا: حارس المسار والمكتبة والأدوات والأذونات واتجاه النصّ
+npm test    # ٢٣١ اختبارًا: حارس المسار والمكتبة والأدوات والأذونات واتجاه النصّ
 ```
 
 يحتاج Node.js وmacOS.
@@ -97,7 +97,8 @@ lib/attachments.js المرفقات → أجزاء رسالة
 lib/agent/       حلقة الأدوات: loop (الجولات والحدود) · tools (١٩ أداة) ·
                  permissions (قواعد ذات نطاق) · skills (المحفّز الحتمي) ·
                  registry (تحقق متساهل وإصلاح JSON) · transcript (ذاكرة وتقليم) ·
-                 ziplite+office (قراءة xlsx/docx وكتابتها بلا تبعيات)
+                 ziplite+office (قراءة xlsx/docx وكتابتها بلا تبعيات) ·
+                 safefetch (حارس الشبكة: يفحص العنوان لا الاسم)
 lib/update.js    فحص الإصدار — يخبر ولا يحدّث
 renderer/        الواجهة: i18n (لغتان) · bidi (اتجاه النصّ المختلط) ·
                  ومعها vendor/ لما تحتاجه من مكتبات
